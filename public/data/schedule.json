@@ -1,6 +1,6 @@
 {
   "schedule_version": 1,
-  "generated_at": "2026-11-25T14:42:54Z",
+  "generated_at": "2026-11-25T17:10:58Z",
   "events": [
     {
       "event_id": "alfa-bank-kubok-sodruzhestva-sprint-men-2026-11-28",
@@ -21,7 +21,7 @@
           "end_utc": "2026-11-28T07:15:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795841100",
@@ -33,7 +33,7 @@
           "end_utc": "2026-11-28T07:15:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795888200",
@@ -45,7 +45,7 @@
           "end_utc": "2026-11-28T19:40:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795906500",
@@ -57,7 +57,7 @@
           "end_utc": "2026-11-29T01:00:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795921200",
@@ -69,7 +69,7 @@
           "end_utc": "2026-11-29T04:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         }
       ]
     },
@@ -92,7 +92,7 @@
           "end_utc": "2026-11-28T09:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795851600",
@@ -104,7 +104,7 @@
           "end_utc": "2026-11-28T09:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795894800",
@@ -116,7 +116,7 @@
           "end_utc": "2026-11-28T21:05:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795914000",
@@ -128,7 +128,7 @@
           "end_utc": "2026-11-29T02:30:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795926300",
@@ -140,7 +140,7 @@
           "end_utc": "2026-11-29T05:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         }
       ]
     },
@@ -163,7 +163,7 @@
           "end_utc": "2026-11-29T06:45:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795930200",
@@ -175,7 +175,7 @@
           "end_utc": "2026-11-29T06:45:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795969500",
@@ -187,7 +187,7 @@
           "end_utc": "2026-11-29T17:40:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         }
       ]
     },
@@ -210,7 +210,7 @@
           "end_utc": "2026-11-29T07:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795934700",
@@ -222,7 +222,7 @@
           "end_utc": "2026-11-29T07:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795974000",
@@ -234,7 +234,7 @@
           "end_utc": "2026-11-29T18:35:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         }
       ]
     },
@@ -257,7 +257,7 @@
           "end_utc": "2026-11-29T08:55:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-arena-1795938600",
@@ -269,7 +269,7 @@
           "end_utc": "2026-11-29T08:55:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         },
         {
           "broadcast_id": "match-strana-1795977300",
@@ -281,7 +281,7 @@
           "end_utc": "2026-11-29T19:40:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-25T14:42:54Z"
+          "verified_at": "2026-11-25T17:10:58Z"
         }
       ]
     }
