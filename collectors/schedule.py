@@ -3,7 +3,7 @@
 import argparse
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -153,6 +153,17 @@ def publish(out: Path, broadcasts: list[Broadcast], errors: dict[str, str], chec
     })
 
 
+def is_due(status: dict | None, today: date) -> bool:
+    """Collect on Sunday and Monday (Moscow); on other days only while this week still has gaps.
+
+    Days after the coming Sunday belong to next week's guide, which Monday's run collects.
+    """
+    if today.weekday() in (6, 0) or status is None or status.get("stale"):
+        return True
+    sunday = today + timedelta(days=6 - today.weekday())
+    return any(date.fromisoformat(url.rsplit("date=", 1)[1]) <= sunday for url in status.get("unpublished", []))
+
+
 def write_json(path: Path, data: dict) -> None:
     handle, temp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
@@ -172,8 +183,18 @@ def utc_text(moment: datetime) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("data"), help="Папка для schedule.json и status.json")
+    parser.add_argument("--only-when-due", action="store_true",
+                        help="Пропустить сбор, если неделя уже собрана и сегодня не воскресенье и не понедельник")
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
+    if args.only_when_due:
+        try:
+            status = json.loads((args.out / "status.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            status = None
+        if not is_due(status, now.astimezone(MOSCOW).date()):
+            print("Неделя уже собрана, сбор не нужен")
+            return
     errors: dict[str, str] = {}
     unpublished: list[str] = []
 
