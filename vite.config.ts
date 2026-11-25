@@ -33,7 +33,8 @@ export default defineConfig({
         runtimeCaching: [
           {
             // Fresh schedule when online, the last downloaded one when offline.
-            urlPattern: ({ url }) => url.pathname.startsWith(`${base}data/`),
+            // A literal pattern: the rule is copied into sw.js, where `base` does not exist.
+            urlPattern: /\/tv_program_match\/data\/[^/]+\.json$/,
             handler: 'NetworkFirst',
             options: { cacheName: 'schedule-data', networkTimeoutSeconds: 5 },
           },
