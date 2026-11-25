@@ -23,23 +23,40 @@ CHANNEL_NAMES = {
 MOSCOW = timezone(timedelta(hours=3))
 MONTHS = "января февраля марта апреля мая июня июля августа сентября октября ноября декабря".split()
 TRANSMISSION = "p-tv-guide-schedule-channel-transmission"
+# Regular biathlon studio shows whose titles do not start with "Биатлон.".
+SHOWS = {"биатлон с дмитрием губерниевым"}
+
+
+CALENDAR_DATE = "m-weekly-inline-calendar__date"
+
+
+class GuideNotPublished(ValueError):
+    """The channel has not published its schedule for the requested day yet."""
 
 
 def guide_url(channel: str, day: date) -> str:
     return f"{MATCH_ORIGIN}/tvguide/{channel}?date={day.isoformat()}"
 
 
+def calendar_day(button) -> str:
+    label = button.get_text(" ", strip=True).split(",")[0]
+    relative_days = {"Сегодня": 0, "Завтра": 1, "Вчера": -1}
+    if label in relative_days:
+        shown_day = datetime.now(MOSCOW).date() + timedelta(days=relative_days[label])
+        label = f"{shown_day.day} {MONTHS[shown_day.month - 1]}"
+    return label
+
+
 def parse_guide(html: str, channel: str, day: date) -> list[Broadcast]:
     page = BeautifulSoup(html, "html.parser")
     channel_name = CHANNEL_NAMES[channel]
     heading = page.select_one("h1")
-    selected = page.select_one(".m-weekly-inline-calendar__date--status-selected")
-    selected_day = selected.get_text(" ", strip=True).split(",")[0] if selected else ""
-    relative_days = {"Сегодня": 0, "Завтра": 1, "Вчера": -1}
-    if selected_day in relative_days:
-        shown_day = datetime.now(MOSCOW).date() + timedelta(days=relative_days[selected_day])
-        selected_day = f"{shown_day.day} {MONTHS[shown_day.month - 1]}"
     expected_day = f"{day.day} {MONTHS[day.month - 1]}"
+    for button in page.select(f".{CALENDAR_DATE}--availability-not-available"):
+        if calendar_day(button) == expected_day:
+            raise GuideNotPublished("Сетка на эту дату ещё не опубликована")
+    selected = page.select_one(f".{CALENDAR_DATE}--status-selected")
+    selected_day = calendar_day(selected) if selected else ""
     if selected_day != expected_day or heading is None or heading.get_text(" ", strip=True) != f"Телепрограмма {channel_name}":
         raise ValueError("Телегид не подтвердил запрошенные дату и канал")
 
@@ -64,11 +81,11 @@ def parse_guide(html: str, channel: str, day: date) -> list[Broadcast]:
 
     broadcasts = []
     for index, (start, title) in enumerate(slots):
-        if not title.casefold().startswith("биатлон."):
-            continue
-        end = slots[index + 1][0] if index + 1 < len(slots) else None
         title = re.sub(r"\s+\[\d+\+\]$", "", title)
         label = title.casefold()
+        if not label.startswith("биатлон.") and label not in SHOWS:
+            continue
+        end = slots[index + 1][0] if index + 1 < len(slots) else None
         kind = "unknown"
         if ". прямая трансляция" in label:
             kind = "live"
@@ -89,7 +106,9 @@ def parse_guide(html: str, channel: str, day: date) -> list[Broadcast]:
 
 
 def collect_guide(start: date, days: int, read_page: Callable[[str], str],
-                  on_error: Callable[[str, Exception], None] | None = None) -> list[Broadcast]:
+                  on_error: Callable[[str, Exception], None] | None = None,
+                  on_unpublished: Callable[[str], None] | None = None) -> list[Broadcast]:
+    """Collect airings; a day the channel has not published yet is reported, not treated as an error."""
     if not 1 <= days <= 7:
         raise ValueError("Разрешено запрашивать от одного до семи дней")
 
@@ -101,6 +120,9 @@ def collect_guide(start: date, days: int, read_page: Callable[[str], str],
             try:
                 for row in parse_guide(read_page(url), channel, day):
                     broadcasts.setdefault(row.broadcast_id, row)
+            except GuideNotPublished:
+                if on_unpublished is not None:
+                    on_unpublished(url)
             except (OSError, ValueError) as error:
                 if on_error is None:
                     raise
@@ -113,8 +135,20 @@ def collect_guide(start: date, days: int, read_page: Callable[[str], str],
             title = row.title.casefold().replace(". прямая трансляция", ". трансляция")
             live_starts.setdefault(title, set()).add(row.start_utc)
 
+    # A show has no live marker: its first airing opens the week, a later one within a day is a repeat.
+    show_starts: dict[str, list[str]] = {}
+    for row in rows:
+        if row.title.casefold() in SHOWS:
+            show_starts.setdefault(row.title.casefold(), []).append(row.start_utc)
+
     for index, row in enumerate(rows):
-        starts = live_starts.get(row.title.casefold(), set())
+        label = row.title.casefold()
+        starts = live_starts.get(label, set())
+        if label in SHOWS:
+            this_start = datetime.fromisoformat(row.start_utc)
+            starts = {start for start in show_starts[label]
+                      if timedelta(0) < this_start - datetime.fromisoformat(start) <= timedelta(days=1)}
+            starts = {min(starts)} if starts else set()
         if row.type == "unknown" and len(starts) == 1:
             elapsed = datetime.fromisoformat(row.start_utc) - datetime.fromisoformat(next(iter(starts)))
             if timedelta(0) < elapsed <= timedelta(days=1):
@@ -137,12 +171,14 @@ def main() -> None:
         parser.error("Укажите диапазон в пределах ближайших семи дней по МСК")
 
     errors: dict[str, str] = {}
+    unpublished: list[str] = []
 
     def record_error(url: str, error: Exception) -> None:
         errors[url] = str(error)
 
-    broadcasts = collect_guide(args.start, args.days, read_page, record_error)
-    print(json.dumps({"broadcasts": [asdict(row) for row in broadcasts], "errors": errors}, indent=2))
+    broadcasts = collect_guide(args.start, args.days, read_page, record_error, unpublished.append)
+    print(json.dumps({"broadcasts": [asdict(row) for row in broadcasts], "errors": errors,
+                      "unpublished": unpublished}, indent=2))
     if errors:
         raise SystemExit(1)
 
