@@ -148,6 +148,7 @@ button, a { font: inherit; color: inherit; }
 .badge--live, .badge--delayed { background: var(--accent); color: var(--bg); }
 .badge--replay, .badge--recording { background: var(--blue); color: var(--text); }
 .badge--channel { background: var(--card-raised); color: var(--muted); }
+.badge--okko { background: #6c3ce0; color: var(--text); }
 .badge--now { background: var(--now); color: var(--text); }
 
 .chevron { color: var(--muted); font-size: 1rem; padding-top: 2px; }

@@ -101,7 +101,7 @@ export default function App() {
       )}
 
       <footer className="foot">
-        Время московское. Показы взяты из официальной телепрограммы «Матча». Результатов гонок здесь нет.
+        Время московское. Показы взяты из официальной телепрограммы «Матча» и расписаний Okko в его Telegram-канале. Результатов гонок здесь нет.
       </footer>
     </div>
   )
@@ -130,7 +130,9 @@ function EventCard({ entry, day, now }: { entry: DayEntry; day: string; now: Dat
             {types.filter((type) => type !== 'unknown').map((type) => (
               <span key={type} className={`badge badge--${type}`}>{typeLabel(type)}</span>
             ))}
-            {channels.map((channel) => <span key={channel} className="badge badge--channel">{channel}</span>)}
+            {channels.map((channel) => (
+              <span key={channel} className={`badge ${channel === 'Okko' ? 'badge--okko' : 'badge--channel'}`}>{channel}</span>
+            ))}
           </span>
         </span>
         <span className="chevron" aria-hidden="true">{open ? '▴' : '▾'}</span>
@@ -174,7 +176,8 @@ function AiringRow({ row, day, raceDay, now }: { row: Broadcast; day: string; ra
         {state === 'finished' && <span className="airing-note">Завершено</span>}
       </span>
       <a className="airing-link" href={row.url ?? row.source_url} target="_blank" rel="noreferrer"
-        aria-label={`Телепрограмма: ${row.channel}`} title="Телепрограмма «Матча»">
+        aria-label={row.platform === 'OKKO' ? 'Расписание Okko в Telegram' : `Телепрограмма: ${row.channel}`}
+        title={row.platform === 'OKKO' ? 'Расписание Okko в Telegram' : 'Телепрограмма «Матча»'}>
         ↗
       </a>
     </li>

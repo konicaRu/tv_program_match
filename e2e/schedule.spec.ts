@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 
 const fixture = (name: string) => readFileSync(`e2e/fixtures/${name}`, 'utf-8')
 
-async function open(page: Page, status = fixture('status.json')) {
+async function open(page: Page, status = fixture('status.json'), schedule = fixture('schedule.json')) {
   await page.clock.setFixedTime(new Date('2026-11-25T12:00:00Z'))
-  await page.route('**/data/schedule.json', (route) => route.fulfill({ body: fixture('schedule.json'), contentType: 'application/json' }))
+  await page.route('**/data/schedule.json', (route) => route.fulfill({ body: schedule, contentType: 'application/json' }))
   await page.route('**/data/status.json', (route) => route.fulfill({ body: status, contentType: 'application/json' }))
   await page.goto('./')
 }
@@ -57,4 +57,25 @@ test('explains when the schedule cannot be loaded', async ({ page }) => {
   await page.route('**/data/schedule.json', (route) => route.fulfill({ status: 503 }))
   await page.goto('./')
   await expect(page.getByRole('alert')).toContainText('Не удалось загрузить расписание')
+})
+
+test('marks Okko airings and links to the Okko schedule post', async ({ page }) => {
+  const schedule = JSON.parse(fixture('schedule.json'))
+  schedule.events.push({
+    event_id: 'kubok-mira-sprint-men-2026-11-29', kind: 'race', title: 'Кубок мира. Спринт',
+    competition: 'Кубок мира', discipline: 'Спринт', gender: 'men', category: 'international',
+    broadcasts: [{
+      broadcast_id: 'okko-sprint-men-1795867200', platform: 'OKKO', channel: 'Okko',
+      title: 'Биатлон. Кубок мира. Спринт. Мужчины', type: 'unknown', start_utc: '2026-11-29T12:00:00Z',
+      end_utc: null, url: 'https://t.me/okkowintersport/2494', source_url: 'https://t.me/okkowintersport/2494',
+      verified_at: '2026-11-25T17:00:00Z',
+    }],
+  })
+  await open(page, fixture('status.json'), JSON.stringify(schedule))
+  await page.getByRole('button', { name: /29 нояб/ }).click()
+  const card = page.getByRole('button', { name: /Спринт · Мужчины.*Кубок мира/ })
+  await expect(card).toContainText('15:00')
+  await expect(card.locator('.badge--okko')).toHaveText('Okko')
+  await card.click()
+  await expect(page.getByRole('link', { name: 'Расписание Okko в Telegram' })).toHaveAttribute('href', 'https://t.me/okkowintersport/2494')
 })

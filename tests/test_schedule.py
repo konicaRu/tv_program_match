@@ -6,7 +6,7 @@ import unittest
 
 from collectors.match_guide import collect_guide
 from collectors.match_tv import Broadcast
-from collectors.schedule import build_schedule, is_due, parse_race, publish
+from collectors.schedule import build_schedule, parse_race, publish
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "match" / "guide"
@@ -143,6 +143,29 @@ class PublishTests(unittest.TestCase):
             "unpublished": ["https://matchtv.ru/tvguide/strana?date=2026-11-30"],
         })
 
+    def test_does_not_rewrite_unchanged_data(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            self.assertTrue(publish(out, guide_rows(), {}, NOW))
+            before = [(out / name).read_bytes() for name in ("schedule.json", "status.json")]
+            self.assertFalse(publish(out, guide_rows(), {}, NOW.replace(hour=19)))
+            self.assertEqual([(out / name).read_bytes() for name in ("schedule.json", "status.json")], before)
+            self.assertTrue(publish(out, guide_rows()[:-1], {}, NOW.replace(hour=20)))
+            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["last_success"], "2026-11-27T20:00:00Z")
+
+    def test_a_repeated_failure_is_recorded_once(self):
+        failure = {"https://matchtv.ru/tvguide/arena": "HTTP 503"}
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            publish(out, guide_rows(), {}, NOW)
+            self.assertTrue(publish(out, [], failure, NOW.replace(hour=15)))
+            self.assertFalse(publish(out, [], failure, NOW.replace(hour=19)))
+            recovered = publish(out, guide_rows(), {}, NOW.replace(hour=20))
+            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
+        self.assertTrue(recovered)
+        self.assertEqual((status["stale"], status["last_success"]), (False, "2026-11-27T20:00:00Z"))
+
     def test_first_failed_run_writes_only_status(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)
@@ -151,27 +174,6 @@ class PublishTests(unittest.TestCase):
             status = json.loads((out / "status.json").read_text(encoding="utf-8"))
         self.assertIsNone(status["last_success"])
         self.assertTrue(status["stale"])
-
-
-class IsDueTests(unittest.TestCase):
-    CLEAN = {"stale": False, "unpublished": []}
-
-    def test_collects_on_sunday_and_monday(self):
-        self.assertTrue(is_due(self.CLEAN, date(2026, 11, 29)))
-        self.assertTrue(is_due(self.CLEAN, date(2026, 11, 30)))
-
-    def test_skips_other_days_once_the_week_is_complete(self):
-        self.assertFalse(is_due(self.CLEAN, date(2026, 12, 2)))
-
-    def test_retries_while_the_week_has_gaps(self):
-        today = date(2026, 12, 2)
-        self.assertTrue(is_due(None, today))
-        self.assertTrue(is_due({"stale": True, "unpublished": []}, today))
-        self.assertTrue(is_due({"stale": False, "unpublished": ["https://matchtv.ru/tvguide/igra?date=2026-12-06"]}, today))
-
-    def test_ignores_next_week_days_that_are_not_published_yet(self):
-        status = {"stale": False, "unpublished": ["https://matchtv.ru/tvguide/igra?date=2026-12-07"]}
-        self.assertFalse(is_due(status, date(2026, 12, 2)))
 
 
 if __name__ == "__main__":

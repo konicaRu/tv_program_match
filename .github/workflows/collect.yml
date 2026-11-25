@@ -2,9 +2,10 @@ name: Collect schedule
 
 on:
   schedule:
-    # Every day at 07:15 Moscow time. The collector itself decides whether a run is due:
-    # always on Sunday and Monday, on other days only while the week has gaps.
+    # Twice a day, 07:15 and 19:15 Moscow time: Okko posts a stage's schedule mid-week.
+    # Data is committed and the app redeployed only when something changed.
     - cron: "15 4 * * *"
+    - cron: "15 16 * * *"
   workflow_dispatch:
 
 permissions:
@@ -31,19 +32,19 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-rus >/dev/null
+          python -m pip install -r requirements.txt
 
       - name: Run tests
         run: python -m unittest discover -s tests
 
-      - name: Collect Match TV guide
+      - name: Collect Match TV guide and Okko schedule
         id: collect
-        env:
-          # A manual run always collects; a scheduled one only when due.
-          WHEN_DUE: ${{ github.event_name == 'schedule' && '--only-when-due' || '' }}
         run: |
           set +e
-          python -m collectors.schedule --out public/data $WHEN_DUE
+          python -m collectors.schedule --out public/data
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Commit updated data
@@ -64,7 +65,7 @@ jobs:
         if: steps.collect.outputs.exit_code != '0'
         run: |
           cat public/data/status.json
-          echo "::error::Часть страниц «Матча» недоступна, опубликованы прежние данные"
+          echo "::error::Часть источников недоступна, опубликованы прежние данные"
           exit 1
 
   # Publish the new data; runs even when a source failed, so the stale warning reaches the app.

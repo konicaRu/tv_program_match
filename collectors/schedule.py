@@ -3,15 +3,17 @@
 import argparse
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 
 from collectors.match_guide import MOSCOW, SHOWS, collect_guide, read_page
 from collectors.match_tv import Broadcast
+from collectors.okko_telegram import CHANNEL_URL as OKKO_CHANNEL_URL, collect_okko
 
 
 SCHEDULE_VERSION = 1
@@ -130,38 +132,49 @@ def show_event(title: str, day: str) -> dict:
 
 
 def publish(out: Path, broadcasts: list[Broadcast], errors: dict[str, str], checked_at: datetime,
-            unpublished: Sequence[str] = ()) -> None:
-    """Replace schedule.json only after a clean run; always record the outcome in status.json.
+            unpublished: Sequence[str] = ()) -> bool:
+    """Replace schedule.json only after a clean run and record the outcome in status.json.
 
-    Days the channels have not published yet are not errors: they are listed so a later run can fill them.
+    Nothing is rewritten when neither the airings nor the outcome changed, so a frequent run
+    commits and publishes only real changes. Days the channels have not published yet are not
+    errors: they are listed so a later run can fill them. Returns whether anything was written.
     """
     out.mkdir(parents=True, exist_ok=True)
     status_path = out / "status.json"
-    try:
-        last_success = json.loads(status_path.read_text(encoding="utf-8")).get("last_success")
-    except (OSError, ValueError):
-        last_success = None
-    if not errors:
-        write_json(out / "schedule.json", build_schedule(broadcasts, checked_at))
-        last_success = utc_text(checked_at)
-    write_json(status_path, {
+    schedule_path = out / "schedule.json"
+    previous_status = read_json(status_path) or {}
+    status = {
         "checked_at": utc_text(checked_at),
-        "last_success": last_success,
+        "last_success": previous_status.get("last_success"),
         "stale": bool(errors),
         "errors": errors,
         "unpublished": list(unpublished),
-    })
+    }
+    schedule = None if errors else build_schedule(broadcasts, checked_at)
+    if schedule is not None and content(schedule) != content(read_json(schedule_path)):
+        write_json(schedule_path, schedule)
+        status["last_success"] = utc_text(checked_at)
+    elif content(status) == content(previous_status):
+        return False
+    elif schedule is not None:
+        status["last_success"] = utc_text(checked_at)
+    write_json(status_path, status)
+    return True
 
 
-def is_due(status: dict | None, today: date) -> bool:
-    """Collect on Sunday and Monday (Moscow); on other days only while this week still has gaps.
+def content(data: dict | None) -> object:
+    """The data without the timestamps that change on every run."""
+    if data is None:
+        return None
+    text = json.dumps(data, ensure_ascii=False, sort_keys=True)
+    return re.sub(r'"(generated_at|verified_at|checked_at|last_success)": ("[^"]*"|null)', "", text)
 
-    Days after the coming Sunday belong to next week's guide, which Monday's run collects.
-    """
-    if today.weekday() in (6, 0) or status is None or status.get("stale"):
-        return True
-    sunday = today + timedelta(days=6 - today.weekday())
-    return any(date.fromisoformat(url.rsplit("date=", 1)[1]) <= sunday for url in status.get("unpublished", []))
+
+def read_json(path: Path) -> dict | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
 
 
 def write_json(path: Path, data: dict) -> None:
@@ -183,26 +196,22 @@ def utc_text(moment: datetime) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("public/data"), help="Папка для schedule.json и status.json")
-    parser.add_argument("--only-when-due", action="store_true",
-                        help="Пропустить сбор, если неделя уже собрана и сегодня не воскресенье и не понедельник")
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
-    if args.only_when_due:
-        try:
-            status = json.loads((args.out / "status.json").read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            status = None
-        if not is_due(status, now.astimezone(MOSCOW).date()):
-            print("Неделя уже собрана, сбор не нужен")
-            return
+    today = now.astimezone(MOSCOW).date()
     errors: dict[str, str] = {}
     unpublished: list[str] = []
 
     def record_error(url: str, error: Exception) -> None:
         errors[url] = str(error)
 
-    broadcasts = collect_guide(now.astimezone(MOSCOW).date(), 7, read_page, record_error, unpublished.append)
-    publish(args.out, broadcasts, errors, now, unpublished)
+    broadcasts = collect_guide(today, 7, read_page, record_error, unpublished.append)
+    try:
+        broadcasts += collect_okko(today)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        record_error(OKKO_CHANNEL_URL, error)
+    changed = publish(args.out, broadcasts, errors, now, unpublished)
+    print("Данные обновлены" if changed else "Данные не изменились")
     if errors:
         raise SystemExit(1)
 
