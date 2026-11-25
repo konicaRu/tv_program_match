@@ -45,4 +45,4 @@ npm run dev
 
 - [План MVP](BIATHLON_PWA_PLAN.md)
 - [Проверка источников](docs/SOURCES.md)
-- [Архитектура](ARCHITECTURE.md)
+- [Архитектура: поток данных, компоненты, план резервных источников](ARCHITECTURE.md)
