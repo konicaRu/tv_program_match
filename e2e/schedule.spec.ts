@@ -1,0 +1,60 @@
+import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+
+const fixture = (name: string) => readFileSync(`e2e/fixtures/${name}`, 'utf-8')
+
+async function open(page: Page, status = fixture('status.json')) {
+  await page.clock.setFixedTime(new Date('2026-11-25T12:00:00Z'))
+  await page.route('**/data/schedule.json', (route) => route.fulfill({ body: fixture('schedule.json'), contentType: 'application/json' }))
+  await page.route('**/data/status.json', (route) => route.fulfill({ body: status, contentType: 'application/json' }))
+  await page.goto('./')
+}
+
+test('opens the next day with airings, in Moscow time', async ({ page }) => {
+  await open(page)
+  await expect(page.getByRole('button', { name: /28 нояб/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText('Суббота, 28 ноября')
+  const sprint = page.getByRole('button', { name: /Спринт · Мужчины/ })
+  await expect(sprint).toContainText('07:45')
+  await expect(page.getByText('Обновлено 25 нояб., 17:42')).toBeVisible()
+})
+
+test('finds the Guberniev show and its replay in two taps', async ({ page }) => {
+  await open(page)
+  await page.getByRole('button', { name: /29 нояб/ }).click()
+  const show = page.getByRole('button', { name: /Биатлон с Дмитрием Губерниевым/ })
+  await show.click()
+  await expect(show).toHaveAttribute('aria-expanded', 'true')
+  const airings = page.locator(`#${await show.getAttribute('aria-controls')} li`)
+  await expect(airings).toHaveCount(3)
+  await expect(airings.nth(0)).toContainText('09:45')
+  await expect(airings.nth(2)).toContainText('20:40')
+  await expect(airings.nth(2)).toContainText('Матч Страна')
+  await expect(airings.nth(2)).toContainText('Повтор записи')
+})
+
+test('dates a night replay by the race day', async ({ page }) => {
+  await open(page)
+  await page.getByRole('button', { name: /Спринт · Мужчины/ }).click()
+  await expect(page.getByText('Повтор записи · гонка сб, 28 нояб.').first()).toBeVisible()
+})
+
+test('has no horizontal scroll', async ({ page }) => {
+  await open(page)
+  await page.getByRole('button', { name: /Спринт · Мужчины/ }).click()
+  const [scroll, width] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth])
+  expect(scroll).toBeLessThanOrEqual(width)
+})
+
+test('warns when the schedule is stale', async ({ page }) => {
+  const stale = { ...JSON.parse(fixture('status.json')), stale: true, errors: { 'https://matchtv.ru/tvguide/igra': 'timed out' } }
+  await open(page, JSON.stringify(stale))
+  await expect(page.getByRole('status')).toContainText('Расписание устарело')
+  await expect(page.getByRole('button', { name: /Спринт · Мужчины/ })).toBeVisible()
+})
+
+test('explains when the schedule cannot be loaded', async ({ page }) => {
+  await page.route('**/data/schedule.json', (route) => route.fulfill({ status: 503 }))
+  await page.goto('./')
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить расписание')
+})

@@ -182,7 +182,7 @@ def utc_text(moment: datetime) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, default=Path("data"), help="Папка для schedule.json и status.json")
+    parser.add_argument("--out", type=Path, default=Path("public/data"), help="Папка для schedule.json и status.json")
     parser.add_argument("--only-when-due", action="store_true",
                         help="Пропустить сбор, если неделя уже собрана и сегодня не воскресенье и не понедельник")
     args = parser.parse_args()

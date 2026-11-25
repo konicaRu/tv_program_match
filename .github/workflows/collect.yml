@@ -39,12 +39,12 @@ jobs:
           WHEN_DUE: ${{ github.event_name == 'schedule' && '--only-when-due' || '' }}
         run: |
           set +e
-          python -m collectors.schedule --out data $WHEN_DUE
+          python -m collectors.schedule --out public/data $WHEN_DUE
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Commit updated data
         run: |
-          if [ -d data ]; then git add data; fi
+          if [ -d public/data ]; then git add public/data; fi
           if git diff --cached --quiet; then
             echo "Данные не изменились"
             exit 0
@@ -57,6 +57,6 @@ jobs:
       - name: Report source errors
         if: steps.collect.outputs.exit_code != '0'
         run: |
-          cat data/status.json
+          cat public/data/status.json
           echo "::error::Часть страниц «Матча» недоступна, опубликованы прежние данные"
           exit 1
