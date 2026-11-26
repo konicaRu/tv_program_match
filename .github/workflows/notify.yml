@@ -1,0 +1,54 @@
+name: Telegram reminders
+
+# Every 10 minutes from 09:00 to 23:59 Moscow time: the 09:00 digest and reminders
+# about 40 minutes before each first showing. GitHub may start a scheduled run a few
+# minutes late, which the 45-minute window absorbs. Sent messages are remembered in
+# the Actions cache, so nothing is committed.
+on:
+  schedule:
+    - cron: "*/10 6-20 * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Только проверочное сообщение"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-reminders
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: .notify-state
+          key: notify-state-${{ github.run_id }}
+          restore-keys: notify-state-
+
+      - name: Send due messages
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.test && '--test' || '' }}
+        run: |
+          mkdir -p .notify-state
+          python -m collectors.notify $TEST
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .notify-state
+          key: notify-state-${{ github.run_id }}
