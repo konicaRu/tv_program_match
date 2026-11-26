@@ -1,0 +1,301 @@
+{
+  "men": {
+    "cup_id": "BT2627SWRLCP__SMTS",
+    "name": "Men's World Cup Total Score",
+    "as_of": "2026-11-26T16:03:16.657+00:00",
+    "race_count": 1,
+    "total_races": 21,
+    "url": "https://www.biathlonworld.com/standings",
+    "rows": [
+      {
+        "rank": "1",
+        "name": "WRIGHT Campbell",
+        "nat": "USA",
+        "score": "90",
+        "ibu_id": "BTNZL12505200201"
+      },
+      {
+        "rank": "2",
+        "name": "STRELOW Justus",
+        "nat": "GER",
+        "score": "75",
+        "ibu_id": "BTGER13012199601"
+      },
+      {
+        "rank": "3",
+        "name": "CHRISTIANSEN Vetle Sjaastad",
+        "nat": "NOR",
+        "score": "65",
+        "ibu_id": "BTNOR11205199201"
+      },
+      {
+        "rank": "4",
+        "name": "LAEGREID Sturla Holm",
+        "nat": "NOR",
+        "score": "55",
+        "ibu_id": "BTNOR12002199701"
+      },
+      {
+        "rank": "5",
+        "name": "HARTWEG Niklas",
+        "nat": "SUI",
+        "score": "50",
+        "ibu_id": "BTSUI10103200001"
+      },
+      {
+        "rank": "6",
+        "name": "HORN Philipp",
+        "nat": "GER",
+        "score": "45",
+        "ibu_id": "BTGER10811199401"
+      },
+      {
+        "rank": "7",
+        "name": "ULDAL Martin",
+        "nat": "NOR",
+        "score": "41",
+        "ibu_id": "BTNOR12305200101"
+      },
+      {
+        "rank": "8",
+        "name": "CLAUDE Emilien",
+        "nat": "FRA",
+        "score": "37",
+        "ibu_id": "BTFRA11306199901"
+      },
+      {
+        "rank": "9",
+        "name": "HOFER Lukas",
+        "nat": "ITA",
+        "score": "34",
+        "ibu_id": "BTITA13009198901"
+      },
+      {
+        "rank": "10",
+        "name": "LOMBARDOT Oscar",
+        "nat": "FRA",
+        "score": "31",
+        "ibu_id": "BTFRA12304200001"
+      },
+      {
+        "rank": "11",
+        "name": "PERROT Eric",
+        "nat": "FRA",
+        "score": "30",
+        "ibu_id": "BTFRA12906200101"
+      },
+      {
+        "rank": "12",
+        "name": "KASKEL Fabian",
+        "nat": "GER",
+        "score": "29",
+        "ibu_id": "BTGER12611200301"
+      },
+      {
+        "rank": "13",
+        "name": "KEHVA Mark-Markos",
+        "nat": "EST",
+        "score": "28",
+        "ibu_id": "BTEST11204200401"
+      },
+      {
+        "rank": "14",
+        "name": "NAWRATH Philipp",
+        "nat": "GER",
+        "score": "27",
+        "ibu_id": "BTGER11302199301"
+      },
+      {
+        "rank": "15",
+        "name": "HARJULA Tuomas",
+        "nat": "FIN",
+        "score": "26",
+        "ibu_id": "BTFIN10806199801"
+      },
+      {
+        "rank": "16",
+        "name": "BOTN Johan-Olav Smoerdal",
+        "nat": "NOR",
+        "score": "25",
+        "ibu_id": "BTNOR11806199901"
+      },
+      {
+        "rank": "17",
+        "name": "BURKHALTER Joscha",
+        "nat": "SUI",
+        "score": "24",
+        "ibu_id": "BTSUI11107199601"
+      },
+      {
+        "rank": "18",
+        "name": "MANDZYN Vitalii",
+        "nat": "UKR",
+        "score": "23",
+        "ibu_id": "BTUKR10504200301"
+      },
+      {
+        "rank": "19",
+        "name": "UNTERWEGER Dominic",
+        "nat": "AUT",
+        "score": "22",
+        "ibu_id": "BTAUT10905199901"
+      },
+      {
+        "rank": "20",
+        "name": "SIIMER Kristo",
+        "nat": "EST",
+        "score": "21",
+        "ibu_id": "BTEST11405199901"
+      },
+      {
+        "rank": "21",
+        "name": "TODEV Blagoy",
+        "nat": "BUL",
+        "score": "20",
+        "ibu_id": "BTBUL10607200101"
+      },
+      {
+        "rank": "22",
+        "name": "GIACOMEL Tommaso",
+        "nat": "ITA",
+        "score": "19",
+        "ibu_id": "BTITA10504200001"
+      },
+      {
+        "rank": "23",
+        "name": "GALICA Grzegorz",
+        "nat": "POL",
+        "score": "18",
+        "ibu_id": "BTPOL11303200701"
+      },
+      {
+        "rank": "24",
+        "name": "CLAUDE Florent",
+        "nat": "BEL",
+        "score": "17",
+        "ibu_id": "BTFRA11111199101"
+      },
+      {
+        "rank": "25",
+        "name": "BONACCI Vincent",
+        "nat": "USA",
+        "score": "16",
+        "ibu_id": "BTUSA12002200001"
+      },
+      {
+        "rank": "26",
+        "name": "BRANDT Viktor",
+        "nat": "SWE",
+        "score": "15",
+        "ibu_id": "BTSWE10807199901"
+      },
+      {
+        "rank": "27",
+        "name": "NORDGREN Melker",
+        "nat": "SWE",
+        "score": "14",
+        "ibu_id": "BTSWE12209200201"
+      },
+      {
+        "rank": "28",
+        "name": "STROLIA Vytautas",
+        "nat": "LTU",
+        "score": "13",
+        "ibu_id": "BTLTU12811199201"
+      },
+      {
+        "rank": "29",
+        "name": "FAK Jakov",
+        "nat": "SLO",
+        "score": "12",
+        "ibu_id": "BTCRO10108198701"
+      },
+      {
+        "rank": "30",
+        "name": "GUNKA Jan",
+        "nat": "POL",
+        "score": "11",
+        "ibu_id": "BTPOL11404200201"
+      },
+      {
+        "rank": "31",
+        "name": "NELIN Jesper",
+        "nat": "SWE",
+        "score": "10",
+        "ibu_id": "BTSWE10310199201"
+      },
+      {
+        "rank": "32",
+        "name": "PATUREL Gaetan",
+        "nat": "FRA",
+        "score": "9",
+        "ibu_id": "BTFRA12809200301"
+      },
+      {
+        "rank": "33",
+        "name": "FLEMING Jasper",
+        "nat": "CAN",
+        "score": "8",
+        "ibu_id": "BTCAN10507200501"
+      },
+      {
+        "rank": "34",
+        "name": "FINELLO Jeremy",
+        "nat": "SUI",
+        "score": "7",
+        "ibu_id": "BTFRA11305199201"
+      },
+      {
+        "rank": "35",
+        "name": "KRCMAR Michal",
+        "nat": "CZE",
+        "score": "6",
+        "ibu_id": "BTCZE12301199101"
+      },
+      {
+        "rank": "36",
+        "name": "SAMUELSSON Sebastian",
+        "nat": "SWE",
+        "score": "5",
+        "ibu_id": "BTSWE12803199701"
+      },
+      {
+        "rank": "37",
+        "name": "LAPSHIN Timofei",
+        "nat": "KOR",
+        "score": "4",
+        "ibu_id": "BTRUS10302198801"
+      },
+      {
+        "rank": "38",
+        "name": "HASLINGER Lukas",
+        "nat": "AUT",
+        "score": "3",
+        "ibu_id": "BTAUT10903200301"
+      },
+      {
+        "rank": "39",
+        "name": "SEIDL Elias",
+        "nat": "GER",
+        "score": "2",
+        "ibu_id": "BTGER12908200401"
+      },
+      {
+        "rank": "40",
+        "name": "ZAHKNA Rene",
+        "nat": "EST",
+        "score": "1",
+        "ibu_id": "BTEST10210199401"
+      }
+    ]
+  },
+  "women": {
+    "cup_id": "BT2627SWRLCP__SWTS",
+    "name": "Women's World Cup Total Score",
+    "as_of": "2026-10-05T12:23:37.76+00:00",
+    "race_count": 0,
+    "total_races": 21,
+    "url": "https://www.biathlonworld.com/standings",
+    "rows": []
+  }
+}

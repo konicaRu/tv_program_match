@@ -275,10 +275,16 @@ def main() -> None:
         runs.append(okko)
 
     changed = publish(args.out, runs, now, today)
-    print("Данные обновлены" if changed else "Данные не изменились")
     for run in runs:
         print(f"{run.name}: {len(run.broadcasts)} показов, ошибок {len(run.errors)}")
-    if any(run.errors for run in runs):
+
+    from collectors.ibu import collect_ibu, publish_ibu  # imports this module's helpers
+
+    ibu_files, ibu_errors = collect_ibu(today)
+    changed = publish_ibu(args.out / "ibu", ibu_files, ibu_errors, now) or changed
+    print(f"ibu: файлов {len(ibu_files)}, ошибок {len(ibu_errors)}")
+    print("Данные обновлены" if changed else "Данные не изменились")
+    if ibu_errors or any(run.errors for run in runs):
         raise SystemExit(1)
 
 

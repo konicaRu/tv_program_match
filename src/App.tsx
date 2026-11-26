@@ -3,6 +3,8 @@ import {
   airingState, buildDays, formatDayLong, formatDayShort, formatStamp, formatTime, headline, initialDay,
   moscowDay, originalDay, staleSources, typeLabel, type Broadcast, type DayEntry, type Schedule, type Status,
 } from './lib/schedule'
+import { racesByStart, type RaceEntry, type Season } from './lib/ibu'
+import { RacesView, RaceView, StandingsView, useLoaded } from './IbuViews'
 
 type Load =
   | { state: 'loading' }
@@ -25,6 +27,17 @@ function useData(): Load {
   return load
 }
 
+/** The page in the address hash: '/', '/races', '/race/<id>' or '/standings'. */
+function useRoute(): string {
+  const [hash, setHash] = useState(() => window.location.hash)
+  useEffect(() => {
+    const update = () => { setHash(window.location.hash); window.scrollTo(0, 0) }
+    window.addEventListener('hashchange', update)
+    return () => window.removeEventListener('hashchange', update)
+  }, [])
+  return hash.replace(/^#/, '') || '/'
+}
+
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -43,6 +56,11 @@ export default function App() {
   const [picked, setPicked] = useState<string | null>(null)
   const selected = picked && days.has(picked) ? picked : initialDay(dayList, today)
   const status = load.state === 'ready' ? load.status : null
+  const route = useRoute()
+  const season = useLoaded<Season>('ibu/season.json')
+  const races = useMemo(() => racesByStart(season.state === 'ready' ? season.data : null), [season])
+  const [standingsRevealed, setStandingsRevealed] = useState(false)
+  const section = route.startsWith('/race') ? 'races' : route === '/standings' ? 'standings' : 'feed'
 
   return (
     <div className="app">
@@ -54,22 +72,25 @@ export default function App() {
         {status?.last_success && <p className="updated">Обновлено {formatStamp(status.last_success)}</p>}
       </header>
 
-      {status?.stale && (
+      {section === 'races' && (route.startsWith('/race/') ? <RaceView raceId={route.slice(6)} /> : <RacesView now={now} />)}
+      {section === 'standings' && <StandingsView revealed={standingsRevealed} onReveal={() => setStandingsRevealed(true)} />}
+
+      {section === 'feed' && status?.stale && (
         <p className="notice" role="status">
           Часть расписания могла устареть: {staleSources(status).join('; ')}.
         </p>
       )}
 
-      {load.state === 'loading' && <p className="empty">Загружаем расписание…</p>}
-      {load.state === 'failed' && (
+      {section === 'feed' && load.state === 'loading' && <p className="empty">Загружаем расписание…</p>}
+      {section === 'feed' && load.state === 'failed' && (
         <p className="notice" role="alert">Не удалось загрузить расписание. Проверьте подключение и обновите страницу.</p>
       )}
 
-      {load.state === 'ready' && dayList.length === 0 && (
+      {section === 'feed' && load.state === 'ready' && dayList.length === 0 && (
         <p className="empty">На ближайшие дни биатлона в программе «Матча» пока нет.</p>
       )}
 
-      {selected && (
+      {section === 'feed' && selected && (
         <>
           <nav className="days" aria-label="Дни">
             {dayList.map((day) => (
@@ -91,7 +112,7 @@ export default function App() {
             <ul className="feed">
               {days.get(selected)!.map((entry) => (
                 <li key={entry.event.event_id}>
-                  <EventCard entry={entry} day={selected} now={now} />
+                  <EventCard entry={entry} day={selected} now={now} races={races} />
                 </li>
               ))}
             </ul>
@@ -99,14 +120,22 @@ export default function App() {
         </>
       )}
 
-      <footer className="foot">
-        Время московское. Показы взяты из официальной телепрограммы «Матча» и расписаний Okko в его Telegram-канале. Результатов гонок здесь нет.
-      </footer>
+      {section === 'feed' && (
+        <footer className="foot">
+          Время московское. Показы взяты из официальной телепрограммы «Матча» и расписаний Okko в его Telegram-канале. Результатов гонок в ленте нет.
+        </footer>
+      )}
+
+      <nav className="bottom-nav" aria-label="Разделы">
+        <a href="#/" aria-current={section === 'feed' ? 'page' : undefined}>Эфиры</a>
+        <a href="#/races" aria-current={section === 'races' ? 'page' : undefined}>Гонки</a>
+        <a href="#/standings" aria-current={section === 'standings' ? 'page' : undefined}>Зачёт</a>
+      </nav>
     </div>
   )
 }
 
-function EventCard({ entry, day, now }: { entry: DayEntry; day: string; now: Date }) {
+function EventCard({ entry, day, now, races }: { entry: DayEntry; day: string; now: Date; races: Map<string, RaceEntry> }) {
   const [open, setOpen] = useState(false)
   const { title, subtitle } = headline(entry.event)
   const times = [...new Set(entry.airings.map((row) => formatTime(row.start_utc)))]
@@ -136,20 +165,24 @@ function EventCard({ entry, day, now }: { entry: DayEntry; day: string; now: Dat
         </span>
         <span className="chevron" aria-hidden="true">{open ? '▴' : '▾'}</span>
       </button>
-      {open && <Airings id={detailsId} event={entry.event} day={day} now={now} />}
+      {open && <Airings id={detailsId} event={entry.event} day={day} now={now} races={races} />}
     </article>
   )
 }
 
-function Airings({ id, event, day, now }: { id: string; event: DayEntry['event']; day: string; now: Date }) {
+function Airings({ id, event, day, now, races }: {
+  id: string; event: DayEntry['event']; day: string; now: Date; races: Map<string, RaceEntry>
+}) {
   const rows = [...event.broadcasts].sort((a, b) => a.start_utc.localeCompare(b.start_utc))
   const raceDay = originalDay(event)
+  const race = rows.map((row) => races.get(row.start_utc)).find((item) => item?.has_startlist)
   return (
     <div className="airings" id={id}>
       <h3>Время трансляций</h3>
       <ul>
         {rows.map((row) => <AiringRow key={row.broadcast_id} row={row} day={day} raceDay={raceDay} now={now} />)}
       </ul>
+      {race && <a className="race-from-feed" href={`#/race/${race.race_id}`}>Стартовый протокол IBU →</a>}
       {event.kind === 'race' && event.title && <p className="source-title">{event.broadcasts[0].title}</p>}
     </div>
   )
