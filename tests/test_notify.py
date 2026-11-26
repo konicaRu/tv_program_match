@@ -4,7 +4,7 @@ import unittest
 import json
 from pathlib import Path
 
-from collectors.notify import plan_messages
+from collectors.notify import ensure_private, plan_messages
 
 
 MSK = timezone(timedelta(hours=3))
@@ -143,6 +143,24 @@ class EveTests(unittest.TestCase):
         _, state = plan_messages(WEEK, {}, at("2026-12-06 09:05"), SEASON)
         messages, _ = plan_messages(WEEK, state, at("2026-12-06 19:05"), SEASON)
         self.assertEqual([text for text in messages if text.startswith("🗓")], [])
+
+
+class PrivateChatTests(unittest.TestCase):
+    def test_refuses_a_channel(self):
+        call = lambda token, method, params: {"id": -1001234567890, "type": "channel", "title": "Формула-1"}
+        with self.assertRaises(SystemExit) as stop:
+            ensure_private("token", "-1001234567890", call)
+        self.assertIn("канал «Формула-1»", str(stop.exception))
+
+    def test_refuses_a_group(self):
+        call = lambda token, method, params: {"type": "supergroup", "title": "Чат"}
+        with self.assertRaises(SystemExit):
+            ensure_private("token", "-100777", call)
+
+    def test_allows_the_private_chat(self):
+        calls = []
+        ensure_private("token", "123456789", lambda token, method, params: calls.append((method, params)) or {"type": "private"})
+        self.assertEqual(calls, [("getChat", {"chat_id": "123456789"})])
 
 
 if __name__ == "__main__":

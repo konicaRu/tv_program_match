@@ -1,4 +1,4 @@
-"""Telegram reminders about biathlon airings.
+"""Telegram reminders about biathlon airings, sent only to the user's private chat with the bot.
 
 - Tuesday 09:00: the week's races by competition, with where to watch them (World Cup races
   come from the IBU calendar, as Okko posts a stage's schedule only mid-week).
@@ -168,10 +168,11 @@ def plan_messages(schedule: dict, state: dict, now: datetime, season: dict | Non
     return messages, state
 
 
-def send(token: str, chat_id: str, text: str) -> None:
-    data = urlencode({"chat_id": chat_id, "text": text, "disable_web_page_preview": "true"}).encode()
+def telegram(token: str, method: str, params: dict) -> dict:
+    """Call the Bot API; a refusal stops the run with Telegram's own explanation."""
+    data = urlencode(params).encode()
     try:
-        with urlopen(f"https://api.telegram.org/bot{token}/sendMessage", data=data, timeout=20) as response:
+        with urlopen(f"https://api.telegram.org/bot{token}/{method}", data=data, timeout=20) as response:
             answer = json.loads(response.read().decode("utf-8"))
     except HTTPError as error:
         # Telegram explains the refusal in the body ("chat not found", "bot was blocked by the user", ...).
@@ -184,7 +185,21 @@ def send(token: str, chat_id: str, text: str) -> None:
                 404: "проверьте TELEGRAM_BOT_TOKEN"}.get(error.code, "")
         raise SystemExit(f"Telegram отказал: HTTP {error.code} {answer.get('description', '')}. {hint}") from None
     if not answer.get("ok"):
-        raise SystemExit(f"Telegram не принял сообщение: {answer.get('description', '')}")
+        raise SystemExit(f"Telegram не принял запрос: {answer.get('description', '')}")
+    return answer.get("result", {})
+
+
+def ensure_private(token: str, chat_id: str, call=telegram) -> None:
+    """Messages go only to the user's private chat with the bot, never to a channel or a group."""
+    chat = call(token, "getChat", {"chat_id": chat_id})
+    if chat.get("type") != "private":
+        kind = {"channel": "канал", "group": "группу", "supergroup": "группу"}.get(chat.get("type"), "не личный чат")
+        raise SystemExit(f"TELEGRAM_CHAT_ID указывает на {kind} «{chat.get('title', '')}», а не на личный чат с ботом. "
+                         "Ничего не отправлено. Запишите в секрет свой личный ID (например, от @userinfobot).")
+
+
+def send(token: str, chat_id: str, text: str) -> None:
+    telegram(token, "sendMessage", {"chat_id": chat_id, "text": text, "disable_web_page_preview": "true"})
 
 
 def main() -> None:
@@ -198,6 +213,7 @@ def main() -> None:
     if not token or not chat_id:
         print("Секреты TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID не заданы — уведомления выключены")
         return
+    ensure_private(token, chat_id)
     if args.test:
         send(token, chat_id, "✅ Бот BIATHLON TV подключён. Во вторник в 09:00 — гонки недели, в 09:00 — эфиры дня, "
                              f"в 19:00 — эфиры на завтра, примерно за 40 минут — напоминание.\n{APP_URL}")
