@@ -3,8 +3,9 @@ from pathlib import Path
 import shutil
 import unittest
 
+from collectors.match_tv import Broadcast
 from collectors.okko_telegram import (
-    CHANNEL_URL, collect_okko, ocr_image, parse_channel, parse_schedule_text,
+    CHANNEL_URL, channel_url, collect_okko, ocr_image, parse_channel, parse_schedule_text,
 )
 from collectors.schedule import parse_race
 
@@ -95,6 +96,59 @@ class ChannelTests(unittest.TestCase):
         later = collect_okko(date(2026, 11, 29), read_page, read_text)
         self.assertEqual([row.title.split(". ")[-1] for row in later], ["Мужчины", "Женщины"])
 
+
+
+def fake_ocr():
+    texts = {}
+
+    def read_text(image_url):
+        texts.setdefault(image_url, f"ocr-2494-{len(texts) + 1}.txt")
+        return ocr(texts[image_url])
+    return read_text
+
+
+def okko_airing(title, start_utc, post="https://t.me/okkowintersport/2400"):
+    return Broadcast(
+        broadcast_id=f"okko-test-{start_utc}", platform="OKKO", channel="Okko", title=title, type="unknown",
+        start_utc=start_utc, end_utc=None, url=post, source_url=post,
+    )
+
+
+class HistoryTests(unittest.TestCase):
+    PAGE = (FIXTURES / "channel.html").read_text(encoding="utf-8")
+    OLD = PAGE.replace('datetime="2026-11-', 'datetime="2026-10-')
+
+    def test_pages_back_until_a_week_before_the_window(self):
+        requested = []
+
+        def read_page(url):
+            requested.append(url)
+            return self.PAGE if len(requested) == 1 else self.OLD
+
+        collect_okko(date(2026, 11, 26), read_page, fake_ocr())
+        self.assertEqual(requested, [CHANNEL_URL, f"{CHANNEL_URL}?before=2483"])
+
+    def test_keeps_airings_from_posts_that_are_no_longer_on_the_pages(self):
+        remembered = okko_airing("Биатлон. Кубок мира. Гонка преследования. Мужчины", "2026-11-30T12:00:00Z")
+        gone = okko_airing("Биатлон. Кубок мира. Спринт. Мужчины", "2026-11-20T12:00:00Z")
+        no_schedule = self.OLD.replace("асписан", "нонсирован")
+        rows = collect_okko(date(2026, 11, 26), lambda url: no_schedule, fake_ocr(), previous=[remembered, gone])
+        self.assertEqual(rows, [remembered])
+
+    def test_a_new_post_replaces_a_remembered_time_for_the_same_race(self):
+        earlier = okko_airing("Биатлон. Кубок мира. Спринт. Мужчины", "2026-11-29T11:00:00Z")
+        rows = collect_okko(date(2026, 11, 26), lambda url: self.PAGE if "before" not in url else "<html></html>",
+                            fake_ocr(), previous=[earlier])
+        sprints = [row.start_utc for row in rows if row.title == earlier.title]
+        self.assertEqual(sprints, ["2026-11-29T12:00:00Z"])
+
+    def test_reads_the_same_schedule_from_the_second_channel(self):
+        page = self.PAGE.replace("okkowintersport/", "okkosport/")
+        self.assertEqual(channel_url("okkosport"), "https://t.me/s/okkosport")
+        rows = collect_okko(date(2026, 11, 26), lambda url: page if "before" not in url else "<html></html>",
+                            fake_ocr(), channel="okkosport")
+        self.assertEqual(len(rows), 6)
+        self.assertEqual({row.url for row in rows}, {"https://t.me/okkosport/2494"})
 
 @unittest.skipUnless(shutil.which("tesseract"), "Tesseract is not installed")
 class OcrTests(unittest.TestCase):

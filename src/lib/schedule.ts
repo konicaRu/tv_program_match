@@ -43,7 +43,8 @@ export interface Status {
 const SOURCE_NAMES: Record<string, string> = {
   match_guide: 'телепрограмма «Матча»',
   match_live: 'раздел биатлона «Матча»',
-  okko_telegram: 'расписание Okko',
+  okko_telegram: 'расписание Okko (канал «Зимний спорт»)',
+  okko_sport: 'расписание Okko (канал «Okko Спорт»)',
 }
 
 /** Sentences naming each source that failed in the last run and how old its data is. */

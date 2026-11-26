@@ -12,7 +12,7 @@ import tempfile
 
 from collectors.match_guide import MOSCOW, SHOWS, collect_guide, read_page
 from collectors.match_tv import Broadcast, collect_live
-from collectors.okko_telegram import CHANNEL_URL as OKKO_CHANNEL_URL, collect_okko
+from collectors.okko_telegram import channel_url, collect_okko
 
 
 SCHEDULE_VERSION = 1
@@ -145,7 +145,9 @@ SOURCE_URLS = {
     "match_guide": "https://matchtv.ru/tvguide/",
     "match_live": "https://matchtv.ru/biathlon/live",
     "okko_telegram": "https://t.me/okkowintersport/",
+    "okko_sport": "https://t.me/okkosport/",
 }
+OKKO_CHANNELS = {"okko_telegram": "okkowintersport", "okko_sport": "okkosport"}
 
 
 def merge(first: dict, second: dict) -> dict:
@@ -262,13 +264,16 @@ def main() -> None:
                                      guide.unpublished.append)
     live = SourceRun("match_live", [])
     live.broadcasts = collect_live(today, read_page, lambda url, error: live.errors.update({url: str(error)}))
-    okko = SourceRun("okko_telegram", [])
-    try:
-        okko.broadcasts = collect_okko(today)
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
-        okko.errors[OKKO_CHANNEL_URL] = str(error)
+    runs = [guide, live]
+    for name, channel in OKKO_CHANNELS.items():
+        okko = SourceRun(name, [])
+        stored = (read_json(args.out / "sources" / f"{name}.json") or {}).get("broadcasts", [])
+        try:
+            okko.broadcasts = collect_okko(today, channel=channel, previous=[Broadcast(**row) for row in stored])
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            okko.errors[channel_url(channel)] = str(error)
+        runs.append(okko)
 
-    runs = [guide, live, okko]
     changed = publish(args.out, runs, now, today)
     print("Данные обновлены" if changed else "Данные не изменились")
     for run in runs:

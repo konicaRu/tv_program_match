@@ -1,12 +1,12 @@
-"""Read Okko biathlon airings from the schedule images in the official Okko Telegram channel.
+"""Read Okko biathlon airings from the schedule images in the official Okko Telegram channels.
 
-Okko posts each stage's schedule as an image in https://t.me/okkowintersport. The public web
-preview of the channel needs no login. The images are read with Tesseract OCR; anything the
+Okko posts each stage's schedule as an image in https://t.me/okkowintersport and reposts it in
+https://t.me/okkosport. The public web preview of a channel needs no login. The images are read with Tesseract OCR; anything the
 OCR text does not state clearly (date, time, discipline, gender) is dropped, never guessed.
 """
 
 import argparse
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
 import difflib
@@ -23,7 +23,10 @@ from collectors.match_tv import Broadcast, utc_timestamp
 
 CHANNEL = "okkowintersport"
 CHANNEL_URL = f"https://t.me/s/{CHANNEL}"
-PAGES = 3
+# Page back until posts are this much older than the window: a stage's schedule is posted
+# a few days ahead, and a busy channel pushes it off the first pages within a day.
+HISTORY = timedelta(days=8)
+MAX_PAGES = 30
 MONTHS = "ЯНВАРЯ ФЕВРАЛЯ МАРТА АПРЕЛЯ МАЯ ИЮНЯ ИЮЛЯ АВГУСТА СЕНТЯБРЯ ОКТЯБРЯ НОЯБРЯ ДЕКАБРЯ".split()
 COMPETITIONS = [
     ("кубок мира", "Кубок мира"),
@@ -60,10 +63,11 @@ class Post:
     posted_at: datetime
     text: str
     images: list[str]
+    channel: str = CHANNEL
 
     @property
     def url(self) -> str:
-        return f"https://t.me/{CHANNEL}/{self.post_id}"
+        return f"https://t.me/{self.channel}/{self.post_id}"
 
     @property
     def is_schedule(self) -> bool:
@@ -82,10 +86,14 @@ class Airing:
         return utc_timestamp(int(self.start.timestamp()))
 
 
-def parse_channel(html: str) -> list[Post]:
+def channel_url(channel: str) -> str:
+    return f"https://t.me/s/{channel}"
+
+
+def parse_channel(html: str, channel: str = CHANNEL) -> list[Post]:
     page = BeautifulSoup(html, "html.parser")
     posts = []
-    for message in page.select(f'.tgme_widget_message[data-post^="{CHANNEL}/"]'):
+    for message in page.select(f'.tgme_widget_message[data-post^="{channel}/"]'):
         stamp = message.select_one(".tgme_widget_message_date time[datetime]")
         if stamp is None:
             continue
@@ -100,6 +108,7 @@ def parse_channel(html: str) -> list[Post]:
             posted_at=datetime.fromisoformat(stamp["datetime"]),
             text=text.get_text("\n", strip=True) if text else "",
             images=images,
+            channel=channel,
         ))
     return sorted(posts, key=lambda post: post.post_id)
 
@@ -177,19 +186,27 @@ def read_image_text(url: str) -> str:
 
 
 def collect_okko(start: date, read_page: Callable[[str], str] = read_page,
-                 read_text: Callable[[str], str] = read_image_text) -> list[Broadcast]:
-    """Okko airings from schedule posts for the seven days from `start` (Moscow)."""
+                 read_text: Callable[[str], str] = read_image_text, channel: str = CHANNEL,
+                 previous: Sequence[Broadcast] = ()) -> list[Broadcast]:
+    """Okko airings from a channel's schedule posts for the seven days from `start` (Moscow).
+
+    `previous` are the airings this channel gave before. One whose post is no longer on the
+    pages read is kept while its day is in the window, unless a post read now gives the same
+    race on the same day, which replaces it.
+    """
+    window_start = datetime.combine(start, datetime.min.time(), tzinfo=MOSCOW)
+    window_end = window_start + timedelta(days=7)
     posts: dict[int, Post] = {}
-    url = CHANNEL_URL
-    for _ in range(PAGES):
-        found = parse_channel(read_page(url))
+    url = channel_url(channel)
+    for _ in range(MAX_PAGES):
+        found = parse_channel(read_page(url), channel)
         if not found:
             break
         posts.update((post.post_id, post) for post in found)
-        url = f"{CHANNEL_URL}?before={found[0].post_id}"
+        if found[0].posted_at < window_start - HISTORY:
+            break
+        url = f"{channel_url(channel)}?before={found[0].post_id}"
 
-    window_start = datetime.combine(start, datetime.min.time(), tzinfo=MOSCOW)
-    window_end = window_start + timedelta(days=7)
     latest: dict[tuple[str, date], tuple[Airing, Post]] = {}
     for post in sorted(posts.values(), key=lambda post: post.post_id):
         if not post.is_schedule:
@@ -200,6 +217,10 @@ def collect_okko(start: date, read_page: Callable[[str], str] = read_page,
                 latest[(airing.title, airing.start.date())] = (airing, post)
 
     broadcasts = []
+    for row in previous:
+        start_at = datetime.fromisoformat(row.start_utc)
+        if window_start <= start_at < window_end and (row.title, start_at.astimezone(MOSCOW).date()) not in latest:
+            broadcasts.append(row)
     for airing, post in latest.values():
         if not window_start <= airing.start < window_end:
             continue

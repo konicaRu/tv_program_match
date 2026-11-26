@@ -55,7 +55,7 @@ test('warns when the schedule is stale', async ({ page }) => {
     },
   }
   await open(page, JSON.stringify(stale))
-  await expect(page.getByRole('status')).toHaveText('Часть расписания могла устареть: расписание Okko: данные от 24 нояб., 07:15.')
+  await expect(page.getByRole('status')).toHaveText('Часть расписания могла устареть: расписание Okko (канал «Зимний спорт»): данные от 24 нояб., 07:15.')
   await expect(page.getByRole('button', { name: /Спринт · Мужчины/ })).toBeVisible()
 })
 
