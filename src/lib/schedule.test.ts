@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import {
-  airingState, buildDays, formatDayLong, formatTime, headline, initialDay, moscowDay, originalDay,
+  airingState, buildDays, formatDayLong, formatTime, staleSources, headline, initialDay, moscowDay, originalDay,
   type Broadcast, type Schedule,
 } from './schedule'
 
@@ -48,6 +48,28 @@ describe('buildDays', () => {
     const days = buildDays(schedule)
     const total = [...days.values()].flat().reduce((sum, entry) => sum + entry.airings.length, 0)
     expect(total).toBe(schedule.events.reduce((sum, event) => sum + event.broadcasts.length, 0) + schedule.unmatched.length)
+  })
+})
+
+describe('staleSources', () => {
+  it('names only the sources that failed, with the age of their data', () => {
+    const status = {
+      checked_at: '', last_success: null, stale: true, errors: {}, unpublished: [],
+      sources: {
+        match_guide: { last_success: '2026-11-26T04:15:00Z', stale: false, errors: {} },
+        match_live: { last_success: null, stale: true, errors: { x: 'down' } },
+        okko_telegram: { last_success: '2026-11-25T16:15:00Z', stale: true, errors: { y: 'down' } },
+      },
+    }
+    expect(staleSources(status)).toEqual([
+      'раздел биатлона «Матча»: данных пока нет',
+      'расписание Okko: данные от 25 нояб., 19:15',
+    ])
+  })
+
+  it('still warns for an old status without per-source details', () => {
+    expect(staleSources({ checked_at: '', last_success: null, stale: true, errors: {}, unpublished: [] }))
+      .toEqual(['часть источников не загрузилась'])
   })
 })
 

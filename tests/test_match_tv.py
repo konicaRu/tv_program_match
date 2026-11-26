@@ -1,7 +1,8 @@
+from datetime import date
 from pathlib import Path
 import unittest
 
-from collectors.match_tv import parse_broadcasts
+from collectors.match_tv import collect_live, live_url, parse_broadcasts
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "match"
@@ -47,3 +48,35 @@ class MatchTvParserTests(unittest.TestCase):
     def test_rejects_missing_schedule_markup(self):
         with self.assertRaises(ValueError):
             parse_broadcasts("<html><p>Unavailable</p></html>", SOURCE)
+
+    def test_an_empty_day_is_not_an_error(self):
+        html = (FIXTURES / "2026-11-26-empty.html").read_text(encoding="utf-8")
+        self.assertEqual(parse_broadcasts(html, SOURCE), [])
+
+
+class CollectLiveTests(unittest.TestCase):
+    def test_collects_a_week_and_reports_failed_days(self):
+        pages = {
+            live_url(date(2026, 11, 28)): (FIXTURES / "2026-11-28.html").read_text(encoding="utf-8"),
+            live_url(date(2026, 11, 29)): (FIXTURES / "2026-11-29.html").read_text(encoding="utf-8"),
+        }
+        empty = (FIXTURES / "2026-11-26-empty.html").read_text(encoding="utf-8")
+        errors = {}
+
+        def read_page(url):
+            if url == live_url(date(2026, 11, 30)):
+                raise OSError("timed out")
+            return pages.get(url, empty)
+
+        rows = collect_live(date(2026, 11, 27), read_page, lambda url, error: errors.setdefault(url, str(error)))
+        self.assertEqual(live_url(date(2026, 11, 28)), "https://matchtv.ru/biathlon/live?date=28-11-2026")
+        self.assertEqual([row.start_utc for row in rows],
+                         ["2026-11-28T04:45:00Z", "2026-11-28T07:40:00Z", "2026-11-29T05:30:00Z", "2026-11-29T07:50:00Z"])
+        self.assertEqual(errors, {live_url(date(2026, 11, 30)): "timed out"})
+
+    def test_rejects_a_page_that_shows_another_day(self):
+        html = (FIXTURES / "2026-11-28.html").read_text(encoding="utf-8")
+        errors = {}
+        rows = collect_live(date(2026, 11, 29), lambda url: html, lambda url, error: errors.setdefault(url, str(error)))
+        self.assertEqual(rows, [])
+        self.assertIn(live_url(date(2026, 11, 29)), errors)

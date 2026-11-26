@@ -1,9 +1,8 @@
 """Group confirmed Match airings into race events and publish schedule JSON."""
 
 import argparse
-from collections.abc import Sequence
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta, timezone
+from dataclasses import asdict, dataclass, field
+from datetime import date, datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -12,7 +11,7 @@ import subprocess
 import tempfile
 
 from collectors.match_guide import MOSCOW, SHOWS, collect_guide, read_page
-from collectors.match_tv import Broadcast
+from collectors.match_tv import Broadcast, collect_live
 from collectors.okko_telegram import CHANNEL_URL as OKKO_CHANNEL_URL, collect_okko
 
 
@@ -131,34 +130,92 @@ def show_event(title: str, day: str) -> dict:
     }
 
 
-def publish(out: Path, broadcasts: list[Broadcast], errors: dict[str, str], checked_at: datetime,
-            unpublished: Sequence[str] = ()) -> bool:
-    """Replace schedule.json only after a clean run and record the outcome in status.json.
+@dataclass
+class SourceRun:
+    """One source's result in this run. A source with errors keeps its last stored airings."""
+    name: str
+    broadcasts: list[Broadcast]
+    errors: dict[str, str] = field(default_factory=dict)
+    unpublished: list[str] = field(default_factory=list)
 
-    Nothing is rewritten when neither the airings nor the outcome changed, so a frequent run
-    commits and publishes only real changes. Days the channels have not published yet are not
-    errors: they are listed so a later run can fill them. Returns whether anything was written.
+
+# Where each source's airings point, to recover them from a schedule.json written before
+# sources were stored separately.
+SOURCE_URLS = {
+    "match_guide": "https://matchtv.ru/tvguide/",
+    "match_live": "https://matchtv.ru/biathlon/live",
+    "okko_telegram": "https://t.me/okkowintersport/",
+}
+
+
+def merge(first: dict, second: dict) -> dict:
+    """The same airing from two sources: keep the first, fill what it lacks from the second."""
+    merged = dict(first)
+    if merged["type"] == "unknown":
+        merged["type"] = second["type"]
+    for key in ("end_utc", "url"):
+        merged[key] = merged[key] or second[key]
+    return merged
+
+
+def publish(out: Path, runs: list[SourceRun], checked_at: datetime, today: date) -> bool:
+    """Store each source's airings, then build schedule.json and status.json from all of them.
+
+    Runs are given in priority order: for an airing two sources share, the earlier one wins.
+    A failed source contributes its last stored airings, so one broken source never empties
+    or freezes the feed; status.json says which source is behind. Airings before `today`
+    (Moscow) are dropped. Nothing is rewritten when nothing but timestamps changed.
+    Returns whether anything was written.
     """
-    out.mkdir(parents=True, exist_ok=True)
-    status_path = out / "status.json"
-    schedule_path = out / "schedule.json"
-    previous_status = read_json(status_path) or {}
+    stamp = utc_text(checked_at)
+    sources = out / "sources"
+    sources.mkdir(parents=True, exist_ok=True)
+    previous_status = read_json(out / "status.json") or {}
+    previous_sources = previous_status.get("sources", {})
+    previous_schedule = read_json(out / "schedule.json") or {}
+    previous_rows = [row for event in previous_schedule.get("events", []) for row in event["broadcasts"]]
+    previous_rows += previous_schedule.get("unmatched", [])
+    changed = False
+    rows: dict[str, dict] = {}
+    source_status = {}
+    for run in runs:
+        path = sources / f"{run.name}.json"
+        stored = read_json(path)
+        if stored is None and run.name in SOURCE_URLS:
+            fields = Broadcast.__dataclass_fields__
+            stored = {"broadcasts": [{key: row[key] for key in fields} for row in previous_rows
+                                     if row["source_url"].startswith(SOURCE_URLS[run.name])]}
+        last_success = previous_sources.get(run.name, {}).get("last_success")
+        if not run.errors:
+            stored = {"source": run.name, "fetched_at": stamp,
+                      "broadcasts": [asdict(row) for row in sorted(run.broadcasts, key=lambda row: row.start_utc)]}
+            if content(stored) != content(read_json(path)):
+                write_json(path, stored)
+                changed = True
+            last_success = stamp
+        source_status[run.name] = {"last_success": last_success, "stale": bool(run.errors), "errors": run.errors}
+        for row in (stored or {}).get("broadcasts", []):
+            rows[row["broadcast_id"]] = merge(rows[row["broadcast_id"]], row) if row["broadcast_id"] in rows else row
+
+    window = datetime.combine(today, datetime.min.time(), tzinfo=MOSCOW)
+    current = [Broadcast(**row) for row in rows.values() if datetime.fromisoformat(row["start_utc"]) >= window]
+    schedule = build_schedule(current, checked_at)
+    if content(schedule) != content(previous_schedule or None):
+        write_json(out / "schedule.json", schedule)
+        changed = True
+
+    errors = {url: text for run in runs for url, text in run.errors.items()}
     status = {
-        "checked_at": utc_text(checked_at),
-        "last_success": previous_status.get("last_success"),
+        "checked_at": stamp,
+        "last_success": stamp if any(not run.errors for run in runs) else previous_status.get("last_success"),
         "stale": bool(errors),
         "errors": errors,
-        "unpublished": list(unpublished),
+        "unpublished": [url for run in runs for url in run.unpublished],
+        "sources": source_status,
     }
-    schedule = None if errors else build_schedule(broadcasts, checked_at)
-    if schedule is not None and content(schedule) != content(read_json(schedule_path)):
-        write_json(schedule_path, schedule)
-        status["last_success"] = utc_text(checked_at)
-    elif content(status) == content(previous_status):
+    if not changed and content(status) == content(previous_status):
         return False
-    elif schedule is not None:
-        status["last_success"] = utc_text(checked_at)
-    write_json(status_path, status)
+    write_json(out / "status.json", status)
     return True
 
 
@@ -167,7 +224,7 @@ def content(data: dict | None) -> object:
     if data is None:
         return None
     text = json.dumps(data, ensure_ascii=False, sort_keys=True)
-    return re.sub(r'"(generated_at|verified_at|checked_at|last_success)": ("[^"]*"|null)', "", text)
+    return re.sub(r'"(generated_at|verified_at|checked_at|last_success|fetched_at)": ("[^"]*"|null)', "", text)
 
 
 def read_json(path: Path) -> dict | None:
@@ -199,20 +256,24 @@ def main() -> None:
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
     today = now.astimezone(MOSCOW).date()
-    errors: dict[str, str] = {}
-    unpublished: list[str] = []
 
-    def record_error(url: str, error: Exception) -> None:
-        errors[url] = str(error)
-
-    broadcasts = collect_guide(today, 7, read_page, record_error, unpublished.append)
+    guide = SourceRun("match_guide", [])
+    guide.broadcasts = collect_guide(today, 7, read_page, lambda url, error: guide.errors.update({url: str(error)}),
+                                     guide.unpublished.append)
+    live = SourceRun("match_live", [])
+    live.broadcasts = collect_live(today, read_page, lambda url, error: live.errors.update({url: str(error)}))
+    okko = SourceRun("okko_telegram", [])
     try:
-        broadcasts += collect_okko(today)
+        okko.broadcasts = collect_okko(today)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
-        record_error(OKKO_CHANNEL_URL, error)
-    changed = publish(args.out, broadcasts, errors, now, unpublished)
+        okko.errors[OKKO_CHANNEL_URL] = str(error)
+
+    runs = [guide, live, okko]
+    changed = publish(args.out, runs, now, today)
     print("Данные обновлены" if changed else "Данные не изменились")
-    if errors:
+    for run in runs:
+        print(f"{run.name}: {len(run.broadcasts)} показов, ошибок {len(run.errors)}")
+    if any(run.errors for run in runs):
         raise SystemExit(1)
 
 

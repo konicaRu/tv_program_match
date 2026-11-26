@@ -47,9 +47,15 @@ test('has no horizontal scroll', async ({ page }) => {
 })
 
 test('warns when the schedule is stale', async ({ page }) => {
-  const stale = { ...JSON.parse(fixture('status.json')), stale: true, errors: { 'https://matchtv.ru/tvguide/igra': 'timed out' } }
+  const stale = {
+    ...JSON.parse(fixture('status.json')), stale: true, errors: { 'https://t.me/s/okkowintersport': 'timed out' },
+    sources: {
+      match_guide: { last_success: '2026-11-25T14:42:54Z', stale: false, errors: {} },
+      okko_telegram: { last_success: '2026-11-24T04:15:00Z', stale: true, errors: { 'https://t.me/s/okkowintersport': 'timed out' } },
+    },
+  }
   await open(page, JSON.stringify(stale))
-  await expect(page.getByRole('status')).toContainText('Расписание устарело')
+  await expect(page.getByRole('status')).toHaveText('Часть расписания могла устареть: расписание Okko: данные от 24 нояб., 07:15.')
   await expect(page.getByRole('button', { name: /Спринт · Мужчины/ })).toBeVisible()
 })
 

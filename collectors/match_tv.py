@@ -1,8 +1,9 @@
-"""Read scheduled broadcasts from the official Match biathlon page."""
+"""Read scheduled broadcasts from the official Match biathlon page (matchtv.ru/biathlon/live)."""
 
 import argparse
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
@@ -12,6 +13,7 @@ from bs4 import BeautifulSoup
 
 MATCH_ORIGIN = "https://matchtv.ru"
 CHANNELS = {"matchtv", "strana", "arena", "igra", "premier"}
+MOSCOW = timezone(timedelta(hours=3))
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,9 @@ def parse_broadcasts(html: str, source_url: str) -> list[Broadcast]:
     page = BeautifulSoup(html, "html.parser")
     items = page.select('[data-block="broadcast-item"]')
     if not items:
+        # An empty list is a day without biathlon; a page without the list is broken markup.
+        if page.select_one(".broadcast__list") is not None:
+            return []
         raise ValueError("Нет строк телепрограммы «Матча»")
 
     broadcasts: dict[str, Broadcast] = {}
@@ -91,6 +96,30 @@ def parse_broadcasts(html: str, source_url: str) -> list[Broadcast]:
             raise ValueError(f"Противоречащие строки телепрограммы: {broadcast_id}")
 
     return sorted(broadcasts.values(), key=lambda broadcast: broadcast.start_utc)
+
+
+def live_url(day: date) -> str:
+    return f"{MATCH_ORIGIN}/biathlon/live?date={day:%d-%m-%Y}"
+
+
+def collect_live(start: date, read_page: Callable[[str], str],
+                 on_error: Callable[[str, Exception], None], days: int = 7) -> list[Broadcast]:
+    """The biathlon section day by day: a second official Match source next to the TV guide."""
+    broadcasts: dict[str, Broadcast] = {}
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        url = live_url(day)
+        try:
+            rows = parse_broadcasts(read_page(url), url)
+            shown = {datetime.fromisoformat(row.start_utc).astimezone(MOSCOW).date() for row in rows}
+            if shown - {day}:
+                raise ValueError("Страница показала не тот день")
+        except (OSError, ValueError) as error:
+            on_error(url, error)
+            continue
+        for row in rows:
+            broadcasts.setdefault(row.broadcast_id, row)
+    return sorted(broadcasts.values(), key=lambda row: row.start_utc)
 
 
 def utc_timestamp(timestamp: int) -> str:

@@ -5,12 +5,14 @@ import tempfile
 import unittest
 
 from collectors.match_guide import collect_guide
-from collectors.match_tv import Broadcast
-from collectors.schedule import build_schedule, parse_race, publish
+from collectors.match_tv import Broadcast, parse_broadcasts
+from collectors.schedule import SourceRun, build_schedule, parse_race, publish
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "match" / "guide"
+LIVE_FIXTURES = Path(__file__).parent / "fixtures" / "match"
 NOW = datetime(2026, 11, 27, 9, 0, tzinfo=timezone.utc)
+TODAY = date(2026, 11, 27)
 
 
 def guide_rows():
@@ -108,72 +110,114 @@ class BuildScheduleTests(unittest.TestCase):
         self.assertEqual(build_schedule(rows, NOW)["events"][0]["event_id"], "kubok-mira-sprint-men-2026-12-05")
 
 
-class PublishTests(unittest.TestCase):
-    def test_writes_schedule_and_status_after_a_clean_run(self):
-        with tempfile.TemporaryDirectory() as folder:
-            out = Path(folder)
-            publish(out, guide_rows(), {}, NOW)
-            schedule = json.loads((out / "schedule.json").read_text(encoding="utf-8"))
-            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
-        self.assertEqual(len(schedule["events"]), 2)
-        self.assertEqual(status, {
-            "checked_at": "2026-11-27T09:00:00Z",
-            "last_success": "2026-11-27T09:00:00Z",
-            "stale": False,
-            "errors": {},
-            "unpublished": [],
-        })
+def live_rows():
+    html = (LIVE_FIXTURES / "2026-11-28.html").read_text(encoding="utf-8")
+    return parse_broadcasts(html, "https://matchtv.ru/biathlon/live?date=28-11-2026")
 
-    def test_keeps_last_valid_schedule_when_a_source_fails(self):
-        later = NOW.replace(hour=15)
+
+def okko_row(start_utc="2026-11-28T12:10:00Z"):
+    return Broadcast(
+        broadcast_id=f"okko-single-mixed-relay-{start_utc}", platform="OKKO", channel="Okko",
+        title="Биатлон. Кубок мира. Одиночная смешанная эстафета", type="unknown", start_utc=start_utc,
+        end_utc=None, url="https://t.me/okkowintersport/2494", source_url="https://t.me/okkowintersport/2494",
+    )
+
+
+def run(name, rows=(), errors=None, unpublished=()):
+    return SourceRun(name, list(rows), dict(errors or {}), list(unpublished))
+
+
+def clean_runs():
+    return [run("match_guide", guide_rows()), run("match_live", live_rows()), run("okko_telegram", [okko_row()])]
+
+
+def read(out, name):
+    return json.loads((out / name).read_text(encoding="utf-8"))
+
+
+class PublishTests(unittest.TestCase):
+    def test_merges_sources_and_keeps_the_richer_copy_of_a_shared_airing(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)
-            publish(out, guide_rows(), {}, NOW)
-            before = (out / "schedule.json").read_bytes()
-            publish(out, guide_rows()[:1], {"https://matchtv.ru/tvguide/strana": "timed out"}, later,
-                    ["https://matchtv.ru/tvguide/strana?date=2026-11-30"])
-            self.assertEqual((out / "schedule.json").read_bytes(), before)
-            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
-            self.assertEqual(sorted(path.name for path in out.iterdir()), ["schedule.json", "status.json"])
-        self.assertEqual(status, {
-            "checked_at": "2026-11-27T15:00:00Z",
-            "last_success": "2026-11-27T09:00:00Z",
-            "stale": True,
-            "errors": {"https://matchtv.ru/tvguide/strana": "timed out"},
-            "unpublished": ["https://matchtv.ru/tvguide/strana?date=2026-11-30"],
-        })
+            self.assertTrue(publish(out, clean_runs(), NOW, TODAY))
+            schedule, status = read(out, "schedule.json"), read(out, "status.json")
+            stored = sorted(path.name for path in (out / "sources").iterdir())
+        self.assertEqual(stored, ["match_guide.json", "match_live.json", "okko_telegram.json"])
+        rows = [row for event in schedule["events"] for row in event["broadcasts"]]
+        self.assertEqual(len(rows), 9)  # 8 from the guide (2 also in the live page) + 1 from Okko
+        sprint = next(row for row in rows if row["broadcast_id"] == "match-matchtv-1795841100")
+        self.assertEqual((sprint["channel"], sprint["type"], sprint["end_utc"]), ("Матч ТВ", "live", "2026-11-28T07:15:00Z"))
+        self.assertEqual(sprint["url"], "https://matchtv.ru/biathlon/matchtvvideo_NI2386909_translation_Alfa_Bank_Kubok_Sodruzhestva_Sprint_Muzhchiny")
+        self.assertEqual(status["stale"], False)
+        self.assertEqual(status["sources"]["okko_telegram"], {"last_success": "2026-11-27T09:00:00Z", "stale": False, "errors": {}})
+
+    def test_a_failed_source_keeps_its_last_airings_and_is_reported_alone(self):
+        later = NOW.replace(hour=15)
+        failure = {"https://t.me/s/okkowintersport": "timed out"}
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            publish(out, clean_runs(), NOW, TODAY)
+            runs = [run("match_guide", guide_rows()[:-1]), run("match_live", live_rows()), run("okko_telegram", errors=failure)]
+            self.assertTrue(publish(out, runs, later, TODAY))
+            schedule, status = read(out, "schedule.json"), read(out, "status.json")
+        rows = [row for event in schedule["events"] for row in event["broadcasts"]]
+        self.assertIn("OKKO", {row["platform"] for row in rows})
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(status["stale"], True)
+        self.assertEqual(status["errors"], failure)
+        self.assertEqual(status["last_success"], "2026-11-27T15:00:00Z")
+        self.assertEqual(status["sources"]["okko_telegram"], {"last_success": "2026-11-27T09:00:00Z", "stale": True, "errors": failure})
+        self.assertEqual(status["sources"]["match_guide"]["last_success"], "2026-11-27T15:00:00Z")
+
+    def test_cached_airings_from_past_days_are_dropped(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            publish(out, clean_runs(), NOW, TODAY)
+            runs = [run("match_guide", []), run("match_live", []), run("okko_telegram", errors={"x": "down"})]
+            publish(out, runs, NOW.replace(day=29), date(2026, 11, 29))
+            schedule = read(out, "schedule.json")
+        self.assertEqual(schedule["events"], [])
 
     def test_does_not_rewrite_unchanged_data(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)
-            self.assertTrue(publish(out, guide_rows(), {}, NOW))
-            before = [(out / name).read_bytes() for name in ("schedule.json", "status.json")]
-            self.assertFalse(publish(out, guide_rows(), {}, NOW.replace(hour=19)))
-            self.assertEqual([(out / name).read_bytes() for name in ("schedule.json", "status.json")], before)
-            self.assertTrue(publish(out, guide_rows()[:-1], {}, NOW.replace(hour=20)))
-            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
-        self.assertEqual(status["last_success"], "2026-11-27T20:00:00Z")
+            self.assertTrue(publish(out, clean_runs(), NOW, TODAY))
+            files = sorted(out.rglob("*.json"))
+            before = [path.read_bytes() for path in files]
+            self.assertFalse(publish(out, clean_runs(), NOW.replace(hour=19), TODAY))
+            self.assertEqual([path.read_bytes() for path in files], before)
 
     def test_a_repeated_failure_is_recorded_once(self):
         failure = {"https://matchtv.ru/tvguide/arena": "HTTP 503"}
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)
-            publish(out, guide_rows(), {}, NOW)
-            self.assertTrue(publish(out, [], failure, NOW.replace(hour=15)))
-            self.assertFalse(publish(out, [], failure, NOW.replace(hour=19)))
-            recovered = publish(out, guide_rows(), {}, NOW.replace(hour=20))
-            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
-        self.assertTrue(recovered)
-        self.assertEqual((status["stale"], status["last_success"]), (False, "2026-11-27T20:00:00Z"))
+            publish(out, clean_runs(), NOW, TODAY)
+            broken = [run("match_guide", errors=failure), run("match_live", live_rows()), run("okko_telegram", [okko_row()])]
+            self.assertTrue(publish(out, broken, NOW.replace(hour=15), TODAY))
+            self.assertFalse(publish(out, broken, NOW.replace(hour=19), TODAY))
+            self.assertTrue(publish(out, clean_runs(), NOW.replace(hour=20), TODAY))
+            status = read(out, "status.json")
+        self.assertEqual((status["stale"], status["sources"]["match_guide"]["last_success"]), (False, "2026-11-27T20:00:00Z"))
 
-    def test_first_failed_run_writes_only_status(self):
+    def test_a_source_without_its_own_file_falls_back_to_the_old_schedule(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)
-            publish(out, [], {"https://matchtv.ru/tvguide/arena": "HTTP 503"}, NOW)
-            self.assertFalse((out / "schedule.json").exists())
-            status = json.loads((out / "status.json").read_text(encoding="utf-8"))
-        self.assertIsNone(status["last_success"])
-        self.assertTrue(status["stale"])
+            publish(out, clean_runs(), NOW, TODAY)
+            (out / "sources" / "okko_telegram.json").unlink()
+            runs = [run("match_guide", guide_rows()), run("match_live", live_rows()), run("okko_telegram", errors={"x": "down"})]
+            publish(out, runs, NOW.replace(hour=15), TODAY)
+            rows = [row for event in read(out, "schedule.json")["events"] for row in event["broadcasts"]]
+        self.assertEqual([row["broadcast_id"] for row in rows if row["platform"] == "OKKO"], [okko_row().broadcast_id])
+
+    def test_first_failed_run_still_publishes_the_other_sources(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            runs = [run("match_guide", errors={"https://matchtv.ru/tvguide/arena": "HTTP 503"}),
+                    run("match_live", live_rows()), run("okko_telegram", [okko_row()])]
+            publish(out, runs, NOW, TODAY)
+            schedule, status = read(out, "schedule.json"), read(out, "status.json")
+        self.assertEqual(len([row for event in schedule["events"] for row in event["broadcasts"]]), 3)
+        self.assertIsNone(status["sources"]["match_guide"]["last_success"])
 
 
 if __name__ == "__main__":

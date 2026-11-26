@@ -37,6 +37,24 @@ export interface Status {
   stale: boolean
   errors: Record<string, string>
   unpublished: string[]
+  sources?: Record<string, { last_success: string | null; stale: boolean; errors: Record<string, string> }>
+}
+
+const SOURCE_NAMES: Record<string, string> = {
+  match_guide: 'телепрограмма «Матча»',
+  match_live: 'раздел биатлона «Матча»',
+  okko_telegram: 'расписание Okko',
+}
+
+/** Sentences naming each source that failed in the last run and how old its data is. */
+export function staleSources(status: Status): string[] {
+  if (!status.sources) return status.stale ? ['часть источников не загрузилась'] : []
+  return Object.entries(status.sources)
+    .filter(([, source]) => source.stale)
+    .map(([name, source]) => {
+      const label = SOURCE_NAMES[name] ?? name
+      return source.last_success ? `${label}: данные от ${formatStamp(source.last_success)}` : `${label}: данных пока нет`
+    })
 }
 
 /** One card in a day's feed: an event together with its airings on that day. */

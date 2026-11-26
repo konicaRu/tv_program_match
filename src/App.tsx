@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   airingState, buildDays, formatDayLong, formatDayShort, formatStamp, formatTime, headline, initialDay,
-  moscowDay, originalDay, typeLabel, type Broadcast, type DayEntry, type Schedule, type Status,
+  moscowDay, originalDay, staleSources, typeLabel, type Broadcast, type DayEntry, type Schedule, type Status,
 } from './lib/schedule'
 
 type Load =
@@ -56,8 +56,7 @@ export default function App() {
 
       {status?.stale && (
         <p className="notice" role="status">
-          Расписание устарело: часть страниц «Матча» не загрузилась.
-          {status.last_success ? ` Показаны данные от ${formatStamp(status.last_success)}.` : ''}
+          Часть расписания могла устареть: {staleSources(status).join('; ')}.
         </p>
       )}
 
