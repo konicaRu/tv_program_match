@@ -1,0 +1,65 @@
+name: Watch SBR results
+
+# Temporary: waits for the Commonwealth Cup to appear on biathlon-results.ru (the SBR
+# results system) so its start lists and results can be added. Every three hours it saves
+# the home page and the competition pages it links to as an artifact, and opens one issue
+# when competitions show up. Remove this file once the SBR collector exists.
+on:
+  schedule:
+    - cron: "40 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download the results system pages
+        id: pages
+        run: |
+          mkdir -p pages
+          curl -sS --fail -o pages/home.html https://biathlon-results.ru/
+          python3 - <<'PY' > links.txt
+          import re
+          html = open("pages/home.html", encoding="utf-8").read()
+          start = html.find("dropdown-competition")
+          block = html[start:html.find("</main>", start)] if start >= 0 else ""
+          links = []
+          for href in re.findall(r'href="([^"#]+)"', block):
+              url = href if href.startswith("http") else "https://biathlon-results.ru/" + href.lstrip("./")
+              if "biathlon-results.ru" in url and url not in links:
+                  links.append(url)
+          print("\n".join(links[:20]))
+          PY
+          count=$(grep -c . links.txt || true)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Соревнований на главной: $count"
+          n=0
+          while read -r url; do
+            [ -z "$url" ] && continue
+            n=$((n+1)); curl -sS --fail -o "pages/competition-$n.html" "$url" || true
+            echo "$n $url"
+            sleep 2
+          done < links.txt
+          cp links.txt pages/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbr-pages
+          path: pages
+          retention-days: 14
+
+      - name: Open an issue when competitions appear
+        if: steps.pages.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="СБР: на biathlon-results.ru появились соревнования"
+          if [ -z "$(gh issue list --state open --search "$title in:title" --json number --jq '.[].number')" ]; then
+            gh issue create --title "$title" --body "Сторож watch-sbr.yml нашёл соревнования на главной biathlon-results.ru. Сохранённые страницы — в артефакте sbr-pages запуска $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Следующий шаг — сборщик стартовых листов и результатов Кубка Содружества."
+          fi
