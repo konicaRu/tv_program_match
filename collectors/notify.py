@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 
@@ -95,9 +96,21 @@ def plan_messages(schedule: dict, state: dict, now: datetime) -> tuple[list[str]
 
 def send(token: str, chat_id: str, text: str) -> None:
     data = urlencode({"chat_id": chat_id, "text": text, "disable_web_page_preview": "true"}).encode()
-    with urlopen(f"https://api.telegram.org/bot{token}/sendMessage", data=data, timeout=20) as response:
-        if not json.loads(response.read().decode("utf-8")).get("ok"):
-            raise OSError("Telegram не принял сообщение")
+    try:
+        with urlopen(f"https://api.telegram.org/bot{token}/sendMessage", data=data, timeout=20) as response:
+            answer = json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        # Telegram explains the refusal in the body ("chat not found", "bot was blocked by the user", ...).
+        try:
+            answer = json.loads(error.read().decode("utf-8"))
+        except ValueError:
+            answer = {}
+        hint = {400: "проверьте TELEGRAM_CHAT_ID и что вы написали боту /start",
+                401: "проверьте TELEGRAM_BOT_TOKEN", 403: "бот заблокирован или не может писать в этот чат",
+                404: "проверьте TELEGRAM_BOT_TOKEN"}.get(error.code, "")
+        raise SystemExit(f"Telegram отказал: HTTP {error.code} {answer.get('description', '')}. {hint}") from None
+    if not answer.get("ok"):
+        raise SystemExit(f"Telegram не принял сообщение: {answer.get('description', '')}")
 
 
 def main() -> None:
