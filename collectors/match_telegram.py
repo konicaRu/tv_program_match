@@ -15,16 +15,21 @@ from collections.abc import Callable
 from dataclasses import asdict
 from datetime import date, datetime, timedelta
 import json
+import re
+import subprocess
 
 from collectors.match_guide import MOSCOW, read_page
 from collectors.match_tv import Broadcast, utc_timestamp
 from collectors.okko_telegram import (
-    COMPETITIONS, DISCIPLINES, GENDERS, TIME, Airing, Post, date_header, ocr_image, read_posts,
+    COMPETITIONS, DISCIPLINES, GENDERS, Airing, Post, date_header, ocr_image, read_posts,
 )
 
 
 CHANNEL = "biathlon_match"
 SHOW = "Биатлон с Дмитрием Губерниевым"
+# A card row starts with its time ("07:45 Спринт. Мужчины"). A time followed by seconds or
+# tenths ("20:00.2", "10:40:30") is a result or a start time, not an airing.
+ROW_TIME = re.compile(r"^\W*([01]?\d|2[0-3])[:.]([0-5]\d)(?![.:,]?\d)")
 
 
 def light_text(image):
@@ -72,7 +77,7 @@ def parse_card(text: str, posted_at: datetime) -> list[Airing]:
         if header:
             day = header_day
             continue
-        clock = TIME.search(line)
+        clock = ROW_TIME.search(line)
         if day is None or clock is None:
             continue
         start = datetime.combine(day, datetime.min.time().replace(hour=int(clock.group(1)), minute=int(clock.group(2))),
@@ -109,7 +114,13 @@ def collect_match_telegram(start: date, read_page: Callable[[str], str] = read_p
         if post.posted_at < window_start - timedelta(days=8):
             continue
         for image in post.images:
-            for airing in parse_card(read_text(image), post.posted_at):
+            try:
+                text = read_text(image)
+            except (OSError, ValueError, subprocess.SubprocessError):
+                # Most photos are not cards: one that fails to load or OCR is skipped,
+                # only an unreadable channel page fails the source.
+                continue
+            for airing in parse_card(text, post.posted_at):
                 latest[(airing.title, airing.start.date())] = (airing, post)
 
     broadcasts = []

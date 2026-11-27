@@ -47,6 +47,11 @@ class ParseCardTests(unittest.TestCase):
                    "28 ноября\n1 Иванов Иван 10:40:30\n")
         self.assertEqual(rows(results), [])
 
+    def test_ignores_race_times_and_start_times(self):
+        results = ("Биатлон. Альфа-Банк Кубок Содружества\n28 ноября\n"
+                   "20:00.2 Спринт. Женщины Томшина\n10:40:30 Спринт. Женщины\nСпринт. Мужчины 07:45\n")
+        self.assertEqual(rows(results), [])
+
     @unittest.skipUnless(shutil.which("tesseract"), "tesseract is not installed")
     def test_ocr_reads_the_real_card(self):
         text = ocr_image((FIXTURES / "card-18519.jpg").read_bytes(), light_text)
@@ -69,6 +74,16 @@ class CollectTests(unittest.TestCase):
             return CARD if len(images) == 1 else ""
 
         return collect_match_telegram(start, read_page, read_text), images
+
+    def test_a_photo_that_fails_is_skipped(self):
+        def read_text(url):
+            if url.endswith(".jpg") and not hasattr(read_text, "failed"):
+                read_text.failed = True
+                raise OSError("HTTP Error 404")
+            return CARD
+
+        broadcasts = collect_match_telegram(date(2026, 11, 27), lambda url: self.PAGE if "before" not in url else "", read_text)
+        self.assertEqual([(row.title, row.start_utc) for row in broadcasts], EXPECTED)
 
     def test_collects_match_tv_airings_from_the_card(self):
         broadcasts, images = self.collect()
@@ -117,6 +132,20 @@ class BackupTests(unittest.TestCase):
         sprint = [row for row in published if row["title"].startswith("Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины")]
         self.assertEqual(len(sprint), 1)
         self.assertEqual((sprint[0]["title"], sprint[0]["end_utc"]), (title, "2026-11-28T07:15:00Z"))
+
+    def test_the_live_page_covers_a_card_despite_upper_case_channel(self):
+        live = Broadcast(broadcast_id="match-matchtv-live", platform="MATCH", channel="МАТЧ ТВ",
+                         title="Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины", type="live",
+                         start_utc="2026-11-28T04:40:00Z", end_utc=None, url=None,
+                         source_url="https://matchtv.ru/biathlon/live?date=28-11-2026")
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            publish(out, [SourceRun("match_live", [live]), SourceRun("match_telegram", self.cards())],
+                    datetime(2026, 11, 27, 9, 0, tzinfo=timezone.utc), date(2026, 11, 27))
+            schedule = json.loads((out / "schedule.json").read_text(encoding="utf-8"))
+        starts = [row["start_utc"] for event in schedule["events"] for row in event["broadcasts"]
+                  if "Спринт. Мужчины" in row["title"]]
+        self.assertEqual(starts, ["2026-11-28T04:40:00Z"])
 
     def test_a_card_time_near_the_guide_time_is_not_a_second_airing(self):
         title = "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Прямая трансляция из Ханты-Мансийска"

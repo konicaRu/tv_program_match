@@ -163,7 +163,8 @@ def airing_key(title: str) -> tuple | str:
 
 def covered(row: dict, rows: list[dict]) -> bool:
     start = datetime.fromisoformat(row["start_utc"])
-    return any(other["channel"] == row["channel"] and airing_key(other["title"]) == airing_key(row["title"])
+    channel = row["channel"].casefold()  # the live page writes "МАТЧ ТВ", the guide "Матч ТВ"
+    return any(other["channel"].casefold() == channel and airing_key(other["title"]) == airing_key(row["title"])
                and abs(datetime.fromisoformat(other["start_utc"]) - start) <= NEAR for other in rows)
 
 

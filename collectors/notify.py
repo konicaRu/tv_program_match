@@ -202,6 +202,18 @@ def send(token: str, chat_id: str, text: str) -> None:
     telegram(token, "sendMessage", {"chat_id": chat_id, "text": text, "disable_web_page_preview": "true"})
 
 
+def send_all(messages: list[str], deliver) -> None:
+    """Send every message; a refused one is reported after the rest have been tried."""
+    failures = []
+    for text in messages:
+        try:
+            deliver(text)
+        except SystemExit as error:
+            failures.append(str(error))
+    if failures:
+        raise SystemExit("; ".join(failures))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--schedule", type=Path, default=Path("public/data/schedule.json"))
@@ -230,10 +242,13 @@ def main() -> None:
     except (OSError, ValueError):
         season = None
     messages, state = plan_messages(schedule, state, datetime.now(timezone.utc), season)
-    for text in messages:
-        send(token, chat_id, text)
     args.state.parent.mkdir(parents=True, exist_ok=True)
-    args.state.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+    try:
+        send_all(messages, lambda text: send(token, chat_id, text))
+    finally:
+        # Keep what was planned even when a send fails: messages already delivered must not
+        # go out again every 10 minutes. A message Telegram refused is not retried.
+        args.state.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
     print(f"Отправлено сообщений: {len(messages)}")
 
 

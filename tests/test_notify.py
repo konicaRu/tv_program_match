@@ -4,7 +4,7 @@ import unittest
 import json
 from pathlib import Path
 
-from collectors.notify import ensure_private, plan_messages
+from collectors.notify import ensure_private, plan_messages, send_all
 
 
 MSK = timezone(timedelta(hours=3))
@@ -143,6 +143,21 @@ class EveTests(unittest.TestCase):
         _, state = plan_messages(WEEK, {}, at("2026-12-06 09:05"), SEASON)
         messages, _ = plan_messages(WEEK, state, at("2026-12-06 19:05"), SEASON)
         self.assertEqual([text for text in messages if text.startswith("🗓")], [])
+
+
+class SendAllTests(unittest.TestCase):
+    def test_a_refused_message_does_not_stop_the_rest_and_is_reported(self):
+        delivered = []
+
+        def deliver(text):
+            if text == "b":
+                raise SystemExit("Telegram отказал: HTTP 429")
+            delivered.append(text)
+
+        with self.assertRaises(SystemExit) as stop:
+            send_all(["a", "b", "c"], deliver)
+        self.assertEqual(delivered, ["a", "c"])
+        self.assertIn("429", str(stop.exception))
 
 
 class PrivateChatTests(unittest.TestCase):
