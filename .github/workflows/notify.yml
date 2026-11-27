@@ -52,3 +52,29 @@ jobs:
         with:
           path: .notify-state
           key: notify-state-${{ github.run_id }}
+
+  # Runs every 10 minutes, so only the first failure in a row is reported.
+  alert:
+    needs: notify
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Send the failure explanation
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          gh run view "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --json jobs > "$RUNNER_TEMP/jobs.json"
+          previous=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow notify.yml --status completed --limit 1 --json conclusion --jq '.[0].conclusion // ""')
+          python -m collectors.alert workflow --name "Напоминания" --jobs "$RUNNER_TEMP/jobs.json" --only-first \
+            --previous "$previous" --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

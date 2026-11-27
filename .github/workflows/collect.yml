@@ -40,6 +40,9 @@ jobs:
       - name: Run tests
         run: python -m unittest discover -s tests
 
+      - name: Remember the data before collecting
+        run: mkdir -p "$RUNNER_TEMP/before" && cp -r public/data/. "$RUNNER_TEMP/before/"
+
       - name: Collect Match TV guide and Okko schedule
         id: collect
         run: |
@@ -61,6 +64,16 @@ jobs:
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
+      # A source that just broke or works again, and World Cup races without an airing:
+      # one Telegram message each, explained in plain Russian.
+      - name: Telegram alerts about sources
+        if: always() && steps.collect.outcome == 'success'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m collectors.alert sources --before "$RUNNER_TEMP/before"
+
       - name: Report source errors
         if: steps.collect.outputs.exit_code != '0'
         run: |
@@ -74,6 +87,33 @@ jobs:
     if: always() && needs.collect.outputs.changed == 'true'
     permissions:
       contents: read
+      actions: read  # deploy.yml's alert job asks for it, though it only runs on its own pushes
       pages: write
       id-token: write
     uses: ./.github/workflows/deploy.yml
+
+  # A failed step (tests, install, push, publishing) gets a Telegram message; source
+  # failures are already explained by the step above.
+  alert:
+    needs: [collect, deploy]
+    if: always() && (needs.collect.result == 'failure' || needs.deploy.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Send the failure explanation
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          gh run view "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --json jobs > "$RUNNER_TEMP/jobs.json"
+          python -m collectors.alert workflow --name "Сбор расписания" --jobs "$RUNNER_TEMP/jobs.json" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

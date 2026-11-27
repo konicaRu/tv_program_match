@@ -54,6 +54,7 @@ jobs:
           retention-days: 14
 
       - name: Open an issue when competitions appear
+        id: issue
         if: steps.pages.outputs.count != '0'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,5 +62,28 @@ jobs:
         run: |
           title="СБР: на biathlon-results.ru появились соревнования"
           if [ -z "$(gh issue list --state open --search "$title in:title" --json number --jq '.[].number')" ]; then
+            echo "created=true" >> "$GITHUB_OUTPUT"
             gh issue create --title "$title" --body "Сторож watch-sbr.yml нашёл соревнования на главной biathlon-results.ru. Сохранённые страницы — в артефакте sbr-pages запуска $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Следующий шаг — сборщик стартовых листов и результатов Кубка Содружества."
           fi
+
+      - uses: actions/checkout@v5
+        if: steps.issue.outputs.created == 'true'
+
+      - name: Tell the user in Telegram
+        if: steps.issue.outputs.created == 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from collectors.notify import ensure_private, send
+          token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
+          if token and chat:
+              ensure_private(token, chat)
+              send(token, chat, "🔔 На biathlon-results.ru появились соревнования СБР. Значит, можно делать сбор "
+                   "стартовых листов и результатов Кубка Содружества: страницы уже сохранены. "
+                   "Напиши в чат с Claude «делаем СБР».\n" + os.environ["RUN_URL"])
+          PY
