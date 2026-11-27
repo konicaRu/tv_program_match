@@ -43,6 +43,7 @@ export interface Status {
 const SOURCE_NAMES: Record<string, string> = {
   match_guide: 'телепрограмма «Матча»',
   match_live: 'раздел биатлона «Матча»',
+  match_telegram: 'карточки «Матча» в Telegram',
   okko_telegram: 'расписание Okko (канал «Зимний спорт»)',
   okko_sport: 'расписание Okko (канал «Okko Спорт»)',
 }

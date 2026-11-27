@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 
 from collectors.match_guide import MOSCOW, SHOWS, collect_guide, read_page
+from collectors.match_telegram import CHANNEL as MATCH_CHANNEL, collect_match_telegram
 from collectors.match_tv import Broadcast, collect_live
 from collectors.okko_telegram import channel_url, collect_okko
 
@@ -144,10 +145,26 @@ class SourceRun:
 SOURCE_URLS = {
     "match_guide": "https://matchtv.ru/tvguide/",
     "match_live": "https://matchtv.ru/biathlon/live",
+    "match_telegram": "https://t.me/biathlon_match/",
     "okko_telegram": "https://t.me/okkowintersport/",
     "okko_sport": "https://t.me/okkosport/",
 }
 OKKO_CHANNELS = {"okko_telegram": "okkowintersport", "okko_sport": "okkosport"}
+# Sources that only fill gaps: their airing is dropped when another source has the same race
+# on the same channel within NEAR (the TV guide's time is exact, a card's may be rounded).
+BACKUP_SOURCES = {"match_telegram"}
+NEAR = timedelta(minutes=90)
+
+
+def airing_key(title: str) -> tuple | str:
+    race = parse_race(title)
+    return (race.discipline_slug, race.gender) if race else title.casefold()
+
+
+def covered(row: dict, rows: list[dict]) -> bool:
+    start = datetime.fromisoformat(row["start_utc"])
+    return any(other["channel"] == row["channel"] and airing_key(other["title"]) == airing_key(row["title"])
+               and abs(datetime.fromisoformat(other["start_utc"]) - start) <= NEAR for other in rows)
 
 
 def merge(first: dict, second: dict) -> dict:
@@ -164,6 +181,7 @@ def publish(out: Path, runs: list[SourceRun], checked_at: datetime, today: date)
     """Store each source's airings, then build schedule.json and status.json from all of them.
 
     Runs are given in priority order: for an airing two sources share, the earlier one wins.
+    A BACKUP_SOURCES airing is used only when no other source covers it.
     A failed source contributes its last stored airings, so one broken source never empties
     or freezes the feed; status.json says which source is behind. Airings before `today`
     (Moscow) are dropped. Nothing is rewritten when nothing but timestamps changed.
@@ -179,6 +197,7 @@ def publish(out: Path, runs: list[SourceRun], checked_at: datetime, today: date)
     previous_rows += previous_schedule.get("unmatched", [])
     changed = False
     rows: dict[str, dict] = {}
+    backups: dict[str, dict] = {}
     source_status = {}
     for run in runs:
         path = sources / f"{run.name}.json"
@@ -196,8 +215,15 @@ def publish(out: Path, runs: list[SourceRun], checked_at: datetime, today: date)
                 changed = True
             last_success = stamp
         source_status[run.name] = {"last_success": last_success, "stale": bool(run.errors), "errors": run.errors}
+        target = backups if run.name in BACKUP_SOURCES else rows
         for row in (stored or {}).get("broadcasts", []):
-            rows[row["broadcast_id"]] = merge(rows[row["broadcast_id"]], row) if row["broadcast_id"] in rows else row
+            target[row["broadcast_id"]] = merge(target[row["broadcast_id"]], row) if row["broadcast_id"] in target else row
+    primary = list(rows.values())
+    for row in backups.values():
+        if row["broadcast_id"] in rows:
+            rows[row["broadcast_id"]] = merge(rows[row["broadcast_id"]], row)
+        elif not covered(row, primary):
+            rows[row["broadcast_id"]] = row
 
     window = datetime.combine(today, datetime.min.time(), tzinfo=MOSCOW)
     current = [Broadcast(**row) for row in rows.values() if datetime.fromisoformat(row["start_utc"]) >= window]
@@ -264,7 +290,12 @@ def main() -> None:
                                      guide.unpublished.append)
     live = SourceRun("match_live", [])
     live.broadcasts = collect_live(today, read_page, lambda url, error: live.errors.update({url: str(error)}))
-    runs = [guide, live]
+    card = SourceRun("match_telegram", [])
+    try:
+        card.broadcasts = collect_match_telegram(today)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        card.errors[channel_url(MATCH_CHANNEL)] = str(error)
+    runs = [guide, live, card]
     for name, channel in OKKO_CHANNELS.items():
         okko = SourceRun(name, [])
         stored = (read_json(args.out / "sources" / f"{name}.json") or {}).get("broadcasts", [])

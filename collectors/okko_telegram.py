@@ -48,6 +48,7 @@ DISCIPLINES = [
     (("коротк", "индивидуальн"), "Короткая индивидуальная гонка", "short-individual", True),
     (("индивидуальн",), "Индивидуальная гонка", "individual", True),
     (("масс",), "Масс-старт", "mass-start", True),
+    (("мосс", "старт"), "Масс-старт", "mass-start", True),  # how OCR reads "Масс" on Match cards
     (("преследован",), "Гонка преследования", "pursuit", True),
     (("пасьют",), "Гонка преследования", "pursuit", True),
     (("эстафет",), "Эстафета", "relay", True),
@@ -118,6 +119,27 @@ def month_of(word: str) -> int | None:
     return MONTHS.index(match[0]) + 1 if match else None
 
 
+def date_header(line: str, posted_day: date) -> tuple[bool, date | None]:
+    """Whether an OCR line is a date header ("28 НОЯБРЯ"), and its date when the day number is readable.
+
+    A date earlier than a week before the post belongs to the next year (January races
+    announced in December). An unreadable day gives (True, None): the lines under it are dropped.
+    """
+    months = [month for word in WORD.findall(line.upper()) if (month := month_of(word))]
+    if not months:
+        return False, None
+    found = re.search(r"(?<!\d)(\d{1,2})\s+[А-ЯЁA-Z]", line.upper())
+    if not found or not 1 <= int(found.group(1)) <= 31:
+        return True, None
+    try:
+        day = date(posted_day.year, months[0], int(found.group(1)))
+    except ValueError:
+        return True, None
+    if day < posted_day - timedelta(days=7):
+        day = day.replace(year=day.year + 1)
+    return True, day
+
+
 def parse_schedule_text(text: str, posted_at: datetime) -> list[Airing]:
     """Turn the OCR text of one schedule image into airings, in Moscow time."""
     label = text.casefold()
@@ -129,18 +151,9 @@ def parse_schedule_text(text: str, posted_at: datetime) -> list[Airing]:
     day: date | None = None
     posted_day = posted_at.astimezone(MOSCOW).date()
     for line in text.splitlines():
-        months = [month for word in WORD.findall(line.upper()) if (month := month_of(word))]
-        if months:
-            # A date header. If its day number is unreadable, drop the lines under it.
-            found = re.search(r"(?<!\d)(\d{1,2})\s+[А-ЯЁA-Z]", line.upper())
-            day = None
-            if found and 1 <= int(found.group(1)) <= 31:
-                try:
-                    day = date(posted_day.year, months[0], int(found.group(1)))
-                except ValueError:
-                    day = None
-                if day is not None and day < posted_day - timedelta(days=7):
-                    day = day.replace(year=day.year + 1)
+        header, header_day = date_header(line, posted_day)
+        if header:
+            day = header_day
             continue
 
         clock = TIME.search(line)
@@ -164,13 +177,19 @@ def parse_schedule_text(text: str, posted_at: datetime) -> list[Airing]:
     return airings
 
 
-def ocr_image(data: bytes) -> str:
-    """OCR a schedule card: keep only near-white text, enlarge it, read it as Russian."""
-    from PIL import Image, ImageOps
+def white_text(image):
+    """Okko cards: near-white text on a colour background becomes black on white."""
+    from PIL import ImageOps
 
-    image = Image.open(io.BytesIO(data)).convert("L")
-    image = image.resize((image.width * 3, image.height * 3), Image.LANCZOS)
-    image = ImageOps.invert(image.point(lambda value: 255 if value > 170 else 0))
+    return ImageOps.invert(image.convert("L").point(lambda value: 255 if value > 170 else 0))
+
+
+def ocr_image(data: bytes, binarize: Callable = white_text) -> str:
+    """OCR a schedule card: enlarge it, keep only its text (`binarize`), read it as Russian."""
+    from PIL import Image
+
+    image = Image.open(io.BytesIO(data)).convert("RGB")
+    image = binarize(image.resize((image.width * 3, image.height * 3), Image.LANCZOS))
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     result = subprocess.run(["tesseract", "stdin", "stdout", "-l", "rus", "--psm", "4"],
@@ -185,6 +204,21 @@ def read_image_text(url: str) -> str:
         return ocr_image(response.read())
 
 
+def read_posts(window_start: datetime, read_page: Callable[[str], str], channel: str) -> list[Post]:
+    """A channel's posts, paging back until they are HISTORY older than the window, oldest first."""
+    posts: dict[int, Post] = {}
+    url = channel_url(channel)
+    for _ in range(MAX_PAGES):
+        found = parse_channel(read_page(url), channel)
+        if not found:
+            break
+        posts.update((post.post_id, post) for post in found)
+        if found[0].posted_at < window_start - HISTORY:
+            break
+        url = f"{channel_url(channel)}?before={found[0].post_id}"
+    return sorted(posts.values(), key=lambda post: post.post_id)
+
+
 def collect_okko(start: date, read_page: Callable[[str], str] = read_page,
                  read_text: Callable[[str], str] = read_image_text, channel: str = CHANNEL,
                  previous: Sequence[Broadcast] = ()) -> list[Broadcast]:
@@ -196,19 +230,8 @@ def collect_okko(start: date, read_page: Callable[[str], str] = read_page,
     """
     window_start = datetime.combine(start, datetime.min.time(), tzinfo=MOSCOW)
     window_end = window_start + timedelta(days=7)
-    posts: dict[int, Post] = {}
-    url = channel_url(channel)
-    for _ in range(MAX_PAGES):
-        found = parse_channel(read_page(url), channel)
-        if not found:
-            break
-        posts.update((post.post_id, post) for post in found)
-        if found[0].posted_at < window_start - HISTORY:
-            break
-        url = f"{channel_url(channel)}?before={found[0].post_id}"
-
     latest: dict[tuple[str, date], tuple[Airing, Post]] = {}
-    for post in sorted(posts.values(), key=lambda post: post.post_id):
+    for post in read_posts(window_start, read_page, channel):
         if not post.is_schedule:
             continue
         for image in post.images:
