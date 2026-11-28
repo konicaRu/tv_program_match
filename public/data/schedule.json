@@ -1,6 +1,6 @@
 {
   "schedule_version": 1,
-  "generated_at": "2026-11-28T00:01:50Z",
+  "generated_at": "2026-11-28T06:11:02Z",
   "events": [
     {
       "event_id": "alfa-bank-kubok-sodruzhestva-sprint-men-2026-11-28",
@@ -12,40 +12,64 @@
       "category": "russian",
       "broadcasts": [
         {
-          "broadcast_id": "match-arena-1795820100",
-          "platform": "MATCH",
-          "channel": "Матч Арена",
-          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска",
-          "type": "unknown",
-          "start_utc": "2026-11-27T22:55:00Z",
-          "end_utc": "2026-11-28T01:00:00Z",
-          "url": null,
-          "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
-          "verified_at": "2026-11-28T00:01:50Z"
-        },
-        {
           "broadcast_id": "match-matchtv-1795841100",
           "platform": "MATCH",
-          "channel": "МАТЧ ТВ",
-          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины",
+          "channel": "Матч ТВ",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Прямая трансляция из Ханты-Мансийска",
           "type": "live",
           "start_utc": "2026-11-28T04:45:00Z",
           "end_utc": "2026-11-28T07:15:00Z",
           "url": "https://matchtv.ru/biathlon/matchtvvideo_NI2386909_translation_Alfa_Bank_Kubok_Sodruzhestva_Sprint_Muzhchiny",
-          "source_url": "https://matchtv.ru/biathlon/live?date=28-11-2026",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-arena-1795841100",
+          "platform": "MATCH",
+          "channel": "Матч Арена",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Прямая трансляция из Ханты-Мансийска",
+          "type": "live",
+          "start_utc": "2026-11-28T04:45:00Z",
+          "end_utc": "2026-11-28T07:15:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-strana-1795888200",
+          "platform": "MATCH",
+          "channel": "Матч Страна",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска",
+          "type": "replay",
+          "start_utc": "2026-11-28T17:50:00Z",
+          "end_utc": "2026-11-28T19:40:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-arena-1795906500",
+          "platform": "MATCH",
+          "channel": "Матч Арена",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска",
+          "type": "replay",
+          "start_utc": "2026-11-28T22:55:00Z",
+          "end_utc": "2026-11-29T01:00:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1795921200",
           "platform": "MATCH",
           "channel": "Матч Страна",
           "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска",
-          "type": "unknown",
+          "type": "replay",
           "start_utc": "2026-11-29T03:00:00Z",
           "end_utc": "2026-11-29T04:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796045100",
@@ -57,7 +81,19 @@
           "end_utc": "2026-11-30T14:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-strana-1796083500",
+          "platform": "MATCH",
+          "channel": "Матч Страна",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска",
+          "type": "unknown",
+          "start_utc": "2026-12-01T00:05:00Z",
+          "end_utc": "2026-12-01T01:30:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -71,40 +107,64 @@
       "category": "russian",
       "broadcasts": [
         {
-          "broadcast_id": "match-arena-1795827600",
-          "platform": "MATCH",
-          "channel": "Матч Арена",
-          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Трансляция из Ханты-Мансийска",
-          "type": "unknown",
-          "start_utc": "2026-11-28T01:00:00Z",
-          "end_utc": "2026-11-28T02:30:00Z",
-          "url": null,
-          "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
-          "verified_at": "2026-11-28T00:01:50Z"
-        },
-        {
           "broadcast_id": "match-matchtv-1795851600",
           "platform": "MATCH",
-          "channel": "МАТЧ ТВ",
-          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины",
+          "channel": "Матч ТВ",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Прямая трансляция из Ханты-Мансийска",
           "type": "live",
           "start_utc": "2026-11-28T07:40:00Z",
           "end_utc": "2026-11-28T09:25:00Z",
           "url": "https://matchtv.ru/biathlon/matchtvvideo_NI2386911_translation_Alfa_Bank_Kubok_Sodruzhestva_Sprint_Zhenshhiny",
-          "source_url": "https://matchtv.ru/biathlon/live?date=28-11-2026",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-arena-1795851600",
+          "platform": "MATCH",
+          "channel": "Матч Арена",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Прямая трансляция из Ханты-Мансийска",
+          "type": "live",
+          "start_utc": "2026-11-28T07:40:00Z",
+          "end_utc": "2026-11-28T09:25:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-strana-1795894800",
+          "platform": "MATCH",
+          "channel": "Матч Страна",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Трансляция из Ханты-Мансийска",
+          "type": "replay",
+          "start_utc": "2026-11-28T19:40:00Z",
+          "end_utc": "2026-11-28T21:05:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-arena-1795914000",
+          "platform": "MATCH",
+          "channel": "Матч Арена",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Трансляция из Ханты-Мансийска",
+          "type": "replay",
+          "start_utc": "2026-11-29T01:00:00Z",
+          "end_utc": "2026-11-29T02:30:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-28",
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1795926300",
           "platform": "MATCH",
           "channel": "Матч Страна",
           "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Трансляция из Ханты-Мансийска",
-          "type": "unknown",
+          "type": "replay",
           "start_utc": "2026-11-29T04:25:00Z",
           "end_utc": "2026-11-29T05:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796050200",
@@ -116,7 +176,19 @@
           "end_utc": "2026-11-30T15:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
+        },
+        {
+          "broadcast_id": "match-strana-1796088600",
+          "platform": "MATCH",
+          "channel": "Матч Страна",
+          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Трансляция из Ханты-Мансийска",
+          "type": "unknown",
+          "start_utc": "2026-12-01T01:30:00Z",
+          "end_utc": "2026-12-01T02:30:00Z",
+          "url": null,
+          "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -139,7 +211,7 @@
           "end_utc": null,
           "url": "https://t.me/okkowintersport/2494",
           "source_url": "https://t.me/okkowintersport/2494",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -162,7 +234,7 @@
           "end_utc": null,
           "url": "https://t.me/okkowintersport/2494",
           "source_url": "https://t.me/okkowintersport/2494",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -185,7 +257,7 @@
           "end_utc": "2026-11-29T06:45:00Z",
           "url": "https://matchtv.ru/biathlon/matchtvvideo_NI2386943_translation_Alfa_Bank_Kubok_Sodruzhestva_Mass_start_Muzhchiny",
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1795930200",
@@ -197,7 +269,7 @@
           "end_utc": "2026-11-29T06:45:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1795969500",
@@ -209,7 +281,7 @@
           "end_utc": "2026-11-29T17:40:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1795987800",
@@ -221,7 +293,7 @@
           "end_utc": "2026-11-29T22:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796007600",
@@ -233,7 +305,7 @@
           "end_utc": "2026-11-30T03:45:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796131500",
@@ -245,7 +317,7 @@
           "end_utc": "2026-12-01T14:10:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-01",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796169900",
@@ -257,7 +329,7 @@
           "end_utc": "2026-12-02T00:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-01",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -280,7 +352,7 @@
           "end_utc": "2026-11-29T07:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1795934700",
@@ -292,7 +364,7 @@
           "end_utc": "2026-11-29T07:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1795974000",
@@ -304,7 +376,7 @@
           "end_utc": "2026-11-29T18:35:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796010300",
@@ -316,7 +388,7 @@
           "end_utc": "2026-11-30T04:35:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796134200",
@@ -328,7 +400,7 @@
           "end_utc": "2026-12-01T15:00:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-01",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796172600",
@@ -340,7 +412,7 @@
           "end_utc": "2026-12-02T01:40:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-01",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -363,7 +435,7 @@
           "end_utc": "2026-11-29T08:55:00Z",
           "url": "https://matchtv.ru/biathlon/matchtvvideo_NI2386945_translation_Alfa_Bank_Kubok_Sodruzhestva_Mass_start_Zhenshhiny",
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1795938600",
@@ -375,7 +447,7 @@
           "end_utc": "2026-11-29T08:55:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1795977300",
@@ -387,7 +459,7 @@
           "end_utc": "2026-11-29T19:40:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1795992600",
@@ -399,7 +471,7 @@
           "end_utc": "2026-11-30T00:00:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-11-29",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796013300",
@@ -411,7 +483,7 @@
           "end_utc": "2026-11-30T05:20:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796137200",
@@ -423,7 +495,7 @@
           "end_utc": "2026-12-01T15:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-01",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796175600",
@@ -435,7 +507,7 @@
           "end_utc": "2026-12-02T02:30:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-01",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -458,7 +530,7 @@
           "end_utc": null,
           "url": "https://t.me/okkowintersport/2494",
           "source_url": "https://t.me/okkowintersport/2494",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -481,12 +553,12 @@
           "end_utc": null,
           "url": "https://t.me/okkowintersport/2494",
           "source_url": "https://t.me/okkowintersport/2494",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
     {
-      "event_id": "alfa-bank-kubok-sodruzhestva-sprint-men-2026-12-01",
+      "event_id": "alfa-bank-kubok-sodruzhestva-sprint-men-2026-12-02",
       "kind": "race",
       "title": "Альфа-Банк Кубок Содружества. Спринт",
       "competition": "Альфа-Банк Кубок Содружества",
@@ -494,18 +566,6 @@
       "gender": "men",
       "category": "russian",
       "broadcasts": [
-        {
-          "broadcast_id": "match-strana-1796083500",
-          "platform": "MATCH",
-          "channel": "Матч Страна",
-          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска",
-          "type": "unknown",
-          "start_utc": "2026-12-01T00:05:00Z",
-          "end_utc": "2026-12-01T01:30:00Z",
-          "url": null,
-          "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
-        },
         {
           "broadcast_id": "match-arena-1796191200",
           "platform": "MATCH",
@@ -516,12 +576,12 @@
           "end_utc": "2026-12-02T07:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-02",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
     {
-      "event_id": "alfa-bank-kubok-sodruzhestva-sprint-women-2026-12-01",
+      "event_id": "alfa-bank-kubok-sodruzhestva-sprint-women-2026-12-02",
       "kind": "race",
       "title": "Альфа-Банк Кубок Содружества. Спринт",
       "competition": "Альфа-Банк Кубок Содружества",
@@ -529,18 +589,6 @@
       "gender": "women",
       "category": "russian",
       "broadcasts": [
-        {
-          "broadcast_id": "match-strana-1796088600",
-          "platform": "MATCH",
-          "channel": "Матч Страна",
-          "title": "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Женщины. Трансляция из Ханты-Мансийска",
-          "type": "unknown",
-          "start_utc": "2026-12-01T01:30:00Z",
-          "end_utc": "2026-12-01T02:30:00Z",
-          "url": null,
-          "source_url": "https://matchtv.ru/tvguide/strana?date=2026-11-30",
-          "verified_at": "2026-11-28T00:01:50Z"
-        },
         {
           "broadcast_id": "match-arena-1796196300",
           "platform": "MATCH",
@@ -551,7 +599,7 @@
           "end_utc": "2026-12-02T08:35:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-02",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -574,7 +622,7 @@
           "end_utc": "2026-12-02T19:05:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-02",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -597,7 +645,7 @@
           "end_utc": "2026-12-02T19:35:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-02",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -620,7 +668,7 @@
           "end_utc": "2026-12-02T20:30:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-02",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -643,7 +691,7 @@
           "end_utc": "2026-12-03T08:25:00Z",
           "url": "https://matchtv.ru/biathlon/matchtvvideo_NI2389126_translation_Alfa_Bank_Kubok_Rossii_Sprint_Zhenshhiny",
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-12-03",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1796279400",
@@ -655,7 +703,7 @@
           "end_utc": "2026-12-03T08:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-03",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796307600",
@@ -667,7 +715,7 @@
           "end_utc": "2026-12-03T16:15:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-03",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796353200",
@@ -679,7 +727,7 @@
           "end_utc": "2026-12-04T04:15:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1796360100",
@@ -691,7 +739,7 @@
           "end_utc": "2026-12-04T06:10:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-matchtv-1796431800",
@@ -703,7 +751,7 @@
           "end_utc": "2026-12-05T01:55:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     },
@@ -726,7 +774,7 @@
           "end_utc": "2026-12-04T08:25:00Z",
           "url": "https://matchtv.ru/biathlon/matchtvvideo_NI2389191_translation_Alfa_Bank_Kubok_Rossii_Sprint_Muzhchiny",
           "source_url": "https://matchtv.ru/tvguide/matchtv?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1796365800",
@@ -738,7 +786,7 @@
           "end_utc": "2026-12-04T08:25:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-strana-1796389200",
@@ -750,7 +798,7 @@
           "end_utc": "2026-12-04T14:55:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/strana?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         },
         {
           "broadcast_id": "match-arena-1796406300",
@@ -762,7 +810,7 @@
           "end_utc": "2026-12-04T19:50:00Z",
           "url": null,
           "source_url": "https://matchtv.ru/tvguide/arena?date=2026-12-04",
-          "verified_at": "2026-11-28T00:01:50Z"
+          "verified_at": "2026-11-28T06:11:02Z"
         }
       ]
     }
