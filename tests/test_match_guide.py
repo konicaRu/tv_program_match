@@ -2,7 +2,11 @@ from datetime import date
 from pathlib import Path
 import unittest
 
-from collectors.match_guide import GuideNotPublished, collect_guide, parse_guide
+from dataclasses import replace
+
+from bs4 import BeautifulSoup
+
+from collectors.match_guide import CHANNEL_NAMES, GuideIncomplete, GuideNotPublished, TRANSMISSION, collect_guide, parse_guide
 
 
 DAY = date(2026, 11, 28)
@@ -62,6 +66,62 @@ class MatchGuideTests(unittest.TestCase):
             ("Матч Арена", "unknown", "2026-12-04T06:45:00Z"),
             ("Матч Страна", "replay", "2026-12-04T17:40:00Z"),
         ])
+
+    def test_a_race_recording_days_after_the_live_airing_is_a_replay(self):
+        live = "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Прямая трансляция из Ханты-Мансийска"
+        recording = "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска"
+        pages = {"2026-11-28": [("matchtv", "07:45", live)], "2026-12-02": [("arena", "09:00", recording)],
+                 "2026-12-09": [("arena", "09:00", recording)]}
+
+        def read_page(url):
+            channel, day = url.split("/")[-1].split("?date=")
+            html = (FIXTURES / "strana.html").read_text(encoding="utf-8")
+            html = html.replace("28 ноября", f"{date.fromisoformat(day).day} {'ноября' if day < '2026-12' else 'декабря'}")
+            html = html.replace("Телепрограмма Матч Страна", f"Телепрограмма {CHANNEL_NAMES[channel]}")
+            page = BeautifulSoup(html, "html.parser")
+            items = page.select(f".p-tv-guide-schedule-channel .{TRANSMISSION}")
+            for item in items[1:]:
+                item.decompose()
+            item = items[0]
+            rows = [row for row in pages.get(day, []) if row[0] == channel]
+            if not rows:
+                item.select_one(f".{TRANSMISSION}__title").string = "Футбол"
+                return str(page)
+            item.select_one(f".{TRANSMISSION}__time-block-time").string = rows[0][1]
+            item.select_one(f".{TRANSMISSION}__title").string = rows[0][2]
+            return str(page)
+
+        early = collect_guide(DAY, 7, read_page)
+        self.assertEqual([(row.channel, row.type) for row in early], [("Матч ТВ", "live"), ("Матч Арена", "replay")])
+        late = collect_guide(date(2026, 12, 3), 7, read_page, previous=())  # a week on, with no live airing
+        self.assertEqual([row.type for row in late], ["unknown"])
+
+    def test_at_night_keeps_the_stored_airings_of_today_s_incomplete_page(self):
+        def read_fixture(url):
+            channel = url.split("/")[-1].split("?")[0]
+            return (FIXTURES / f"{channel}.html").read_text(encoding="utf-8")
+
+        full = collect_guide(DAY, 1, read_fixture, today=DAY)
+        page = BeautifulSoup(read_fixture("arena"), "html.parser")
+        items = page.select(f".p-tv-guide-schedule-channel .{TRANSMISSION}")
+        times = [item.select_one(f".{TRANSMISSION}__time-block-time").get_text(strip=True) for item in items]
+        midnight = next(index for index in range(1, len(times)) if times[index] < times[index - 1])
+        for item in items[:midnight]:  # what the site shows at 03:00: only the hours after midnight
+            item.decompose()
+        night = str(page)
+        with self.assertRaises(GuideIncomplete):
+            parse_guide(night, "arena", DAY, today=DAY)
+
+        def read_at_night(url):
+            return night if "/arena?" in url else read_fixture(url.split("/")[-1].split("?")[0])
+
+        elsewhere = replace(full[0], broadcast_id="match-arena-1", source_url="https://matchtv.ru/tvguide/arena?date=2026-11-27")
+        errors = []
+        rows = collect_guide(DAY, 1, read_at_night, lambda url, error: errors.append(url),
+                             previous=full + [elsewhere], today=DAY)
+        self.assertEqual(errors, [])
+        self.assertEqual(rows, full)
+        self.assertIn("Матч Арена", {row.channel for row in rows})
 
     def test_rejects_a_page_for_a_different_date(self):
         html = (FIXTURES / "strana.html").read_text(encoding="utf-8")

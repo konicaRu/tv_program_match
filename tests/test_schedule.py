@@ -105,6 +105,16 @@ class BuildScheduleTests(unittest.TestCase):
             "kubok-mira-sprint-women-2026-12-04", "kubok-mira-sprint-women-2026-12-11",
         ])
 
+    def test_a_replay_days_later_stays_with_its_race(self):
+        live = "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Прямая трансляция из Ханты-Мансийска"
+        recording = "Биатлон. Альфа-Банк Кубок Содружества. Спринт. Мужчины. Трансляция из Ханты-Мансийска"
+        schedule = build_schedule([
+            airing(live, "2026-11-28T04:45:00Z", kind="live"),
+            airing(recording, "2026-12-02T06:00:00Z", "Матч Арена", "replay"),
+        ], NOW)
+        self.assertEqual(len(schedule["events"]), 1)
+        self.assertEqual([row["channel"] for row in schedule["events"][0]["broadcasts"]], ["Матч ТВ", "Матч Арена"])
+
     def test_event_date_is_the_moscow_date_of_the_first_airing(self):
         rows = [airing("Биатлон. Кубок мира. Спринт. Мужчины", "2026-12-04T22:30:00Z")]
         self.assertEqual(build_schedule(rows, NOW)["events"][0]["event_id"], "kubok-mira-sprint-men-2026-12-05")

@@ -1,7 +1,7 @@
 """Collect biathlon airings from each official Match channel schedule."""
 
 import argparse
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import asdict, replace
 from datetime import date, datetime, time, timedelta, timezone
 import json
@@ -28,10 +28,20 @@ SHOWS = {"биатлон с дмитрием губерниевым"}
 
 
 CALENDAR_DATE = "m-weekly-inline-calendar__date"
+# A channel's day runs from about 06:00 to the next morning. At night the site shows only the
+# hours after midnight on today's page, so a today's page that starts earlier is incomplete.
+DAY_STARTS = time(6, 0)
+# A race's recording is repeated for several days after its live airing, under the same title
+# without "Прямая". The title names the venue, so the next stage elsewhere is not mistaken for it.
+REPLAY_WINDOW = timedelta(days=7)
 
 
 class GuideNotPublished(ValueError):
     """The channel has not published its schedule for the requested day yet."""
+
+
+class GuideIncomplete(ValueError):
+    """Today's page shows only part of the day (the site does this at night)."""
 
 
 def guide_url(channel: str, day: date) -> str:
@@ -47,7 +57,7 @@ def calendar_day(button) -> str:
     return label
 
 
-def parse_guide(html: str, channel: str, day: date) -> list[Broadcast]:
+def parse_guide(html: str, channel: str, day: date, today: date | None = None) -> list[Broadcast]:
     page = BeautifulSoup(html, "html.parser")
     channel_name = CHANNEL_NAMES[channel]
     heading = page.select_one("h1")
@@ -63,6 +73,9 @@ def parse_guide(html: str, channel: str, day: date) -> list[Broadcast]:
     items = page.select(f".p-tv-guide-schedule-channel .{TRANSMISSION}")
     if not items:
         raise ValueError("Сетка на эту дату недоступна")
+    first = items[0].select_one(f".{TRANSMISSION}__time-block-time")
+    if day == today and first is not None and time.fromisoformat(first.get_text(strip=True)) < DAY_STARTS:
+        raise GuideIncomplete("Сайт показал только часы после полуночи, а не весь день")
 
     slots: list[tuple[int, str]] = []
     slot_day = day
@@ -107,8 +120,12 @@ def parse_guide(html: str, channel: str, day: date) -> list[Broadcast]:
 
 def collect_guide(start: date, days: int, read_page: Callable[[str], str],
                   on_error: Callable[[str, Exception], None] | None = None,
-                  on_unpublished: Callable[[str], None] | None = None) -> list[Broadcast]:
-    """Collect airings; a day the channel has not published yet is reported, not treated as an error."""
+                  on_unpublished: Callable[[str], None] | None = None,
+                  previous: Iterable[Broadcast] = (), today: date | None = None) -> list[Broadcast]:
+    """Collect airings; a day the channel has not published yet is reported, not treated as an error.
+
+    When today's page is incomplete (at night), the airings `previous` holds for that page are kept.
+    """
     if not 1 <= days <= 7:
         raise ValueError("Разрешено запрашивать от одного до семи дней")
 
@@ -118,8 +135,12 @@ def collect_guide(start: date, days: int, read_page: Callable[[str], str],
         for channel in CHANNEL_NAMES:
             url = guide_url(channel, day)
             try:
-                for row in parse_guide(read_page(url), channel, day):
+                for row in parse_guide(read_page(url), channel, day, today):
                     broadcasts.setdefault(row.broadcast_id, row)
+            except GuideIncomplete:
+                for row in previous:
+                    if row.source_url == url:
+                        broadcasts.setdefault(row.broadcast_id, row)
             except GuideNotPublished:
                 if on_unpublished is not None:
                     on_unpublished(url)
@@ -143,16 +164,17 @@ def collect_guide(start: date, days: int, read_page: Callable[[str], str],
 
     for index, row in enumerate(rows):
         label = row.title.casefold()
-        starts = live_starts.get(label, set())
+        this_start = datetime.fromisoformat(row.start_utc)
         if label in SHOWS:
-            this_start = datetime.fromisoformat(row.start_utc)
-            starts = {start for start in show_starts[label]
-                      if timedelta(0) < this_start - datetime.fromisoformat(start) <= timedelta(days=1)}
-            starts = {min(starts)} if starts else set()
-        if row.type == "unknown" and len(starts) == 1:
-            elapsed = datetime.fromisoformat(row.start_utc) - datetime.fromisoformat(next(iter(starts)))
-            if timedelta(0) < elapsed <= timedelta(days=1):
-                rows[index] = replace(row, type="replay")
+            starts = show_starts[label]
+            window = timedelta(days=1)
+        else:
+            # "Трансляция из Ханты-Мансийска" days after the "Прямая трансляция" of the same title.
+            starts = live_starts.get(label, set())
+            window = REPLAY_WINDOW
+        if row.type == "unknown" and any(timedelta(0) < this_start - datetime.fromisoformat(start) <= window
+                                         for start in starts):
+            rows[index] = replace(row, type="replay")
     return rows
 
 

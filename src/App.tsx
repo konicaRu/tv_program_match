@@ -199,7 +199,7 @@ function AiringRow({ row, day, raceDay, now }: { row: Broadcast; day: string; ra
       <span className="airing-when">
         {rowDay !== day && <span className="airing-day">{formatDayShort(rowDay)}</span>}
         <time dateTime={row.start_utc}>{formatTime(row.start_utc)}</time>
-        {row.end_utc && <span className="airing-end">–{formatTime(row.end_utc)}</span>}
+        {row.end_utc && <span className="airing-end">до {formatTime(row.end_utc)}</span>}
       </span>
       <span className="airing-what">
         <span className="airing-channel">{row.channel}</span>

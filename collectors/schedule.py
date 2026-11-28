@@ -85,6 +85,7 @@ def build_schedule(broadcasts: list[Broadcast], checked_at: datetime) -> dict:
     stamp = utc_text(checked_at)
     events: list[dict] = []
     open_events: dict[Race | str, tuple[datetime, dict]] = {}
+    live_events: dict[str, dict] = {}
     unmatched = []
     for row in sorted(broadcasts, key=lambda row: row.start_utc):
         item = {**asdict(row), "verified_at": stamp}
@@ -94,6 +95,11 @@ def build_schedule(broadcasts: list[Broadcast], checked_at: datetime) -> dict:
             unmatched.append(item)
             continue
         start = datetime.fromisoformat(row.start_utc)
+        title = row.title.casefold().replace(". прямая трансляция", ". трансляция")
+        if row.type == "replay" and title in live_events:
+            # A replay days later still belongs to the race it repeats.
+            live_events[title]["broadcasts"].append(item)
+            continue
         first_start, event = open_events.get(key, (None, None))
         if event is None or start - first_start > EVENT_WINDOW:
             day = start.astimezone(MOSCOW).date().isoformat()
@@ -102,6 +108,8 @@ def build_schedule(broadcasts: list[Broadcast], checked_at: datetime) -> dict:
             open_events[key] = (first_start, event)
             events.append(event)
         event["broadcasts"].append(item)
+        if row.type == "live":
+            live_events[title] = event
     return {"schedule_version": SCHEDULE_VERSION, "generated_at": stamp, "events": events, "unmatched": unmatched}
 
 
@@ -287,8 +295,9 @@ def main() -> None:
     today = now.astimezone(MOSCOW).date()
 
     guide = SourceRun("match_guide", [])
+    stored = (read_json(args.out / "sources" / "match_guide.json") or {}).get("broadcasts", [])
     guide.broadcasts = collect_guide(today, 7, read_page, lambda url, error: guide.errors.update({url: str(error)}),
-                                     guide.unpublished.append)
+                                     guide.unpublished.append, [Broadcast(**row) for row in stored], today)
     live = SourceRun("match_live", [])
     live.broadcasts = collect_live(today, read_page, lambda url, error: live.errors.update({url: str(error)}))
     card = SourceRun("match_telegram", [])
