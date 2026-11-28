@@ -1,18 +1,7 @@
 {
   "source": "okko_telegram",
-  "fetched_at": "2026-11-27T00:34:08Z",
+  "fetched_at": "2026-11-28T00:01:50Z",
   "broadcasts": [
-    {
-      "broadcast_id": "okko-individual-women-1795792500",
-      "platform": "OKKO",
-      "channel": "Okko",
-      "title": "Биатлон. Кубок мира. Индивидуальная гонка. Женщины",
-      "type": "unknown",
-      "start_utc": "2026-11-27T15:15:00Z",
-      "end_utc": null,
-      "url": "https://t.me/okkowintersport/2494",
-      "source_url": "https://t.me/okkowintersport/2494"
-    },
     {
       "broadcast_id": "okko-single-mixed-relay-1795867800",
       "platform": "OKKO",

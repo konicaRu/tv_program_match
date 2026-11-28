@@ -292,10 +292,291 @@
   "women": {
     "cup_id": "BT2627SWRLCP__SWTS",
     "name": "Women's World Cup Total Score",
-    "as_of": "2026-10-05T12:23:37.76+00:00",
-    "race_count": 0,
+    "as_of": "2026-11-27T15:56:19.747+00:00",
+    "race_count": 1,
     "total_races": 21,
     "url": "https://www.biathlonworld.com/standings",
-    "rows": []
+    "rows": [
+      {
+        "rank": "1",
+        "name": "OEBERG Elvira",
+        "nat": "SWE",
+        "score": "90",
+        "ibu_id": "BTSWE22602199901"
+      },
+      {
+        "rank": "2",
+        "name": "LEINAMO Sonja",
+        "nat": "FIN",
+        "score": "75",
+        "ibu_id": "BTFIN22002200201"
+      },
+      {
+        "rank": "3",
+        "name": "SIMON Julia",
+        "nat": "FRA",
+        "score": "65",
+        "ibu_id": "BTFRA20910199601"
+      },
+      {
+        "rank": "4",
+        "name": "MICHELON Oceane",
+        "nat": "FRA",
+        "score": "55",
+        "ibu_id": "BTFRA20403200201"
+      },
+      {
+        "rank": "5",
+        "name": "JOHANSEN Marthe Krakstad",
+        "nat": "NOR",
+        "score": "50",
+        "ibu_id": "BTNOR20501199901"
+      },
+      {
+        "rank": "6",
+        "name": "KNOTTEN Karoline Offigstad",
+        "nat": "NOR",
+        "score": "45",
+        "ibu_id": "BTNOR20601199501"
+      },
+      {
+        "rank": "7",
+        "name": "TANNHEIMER Julia",
+        "nat": "GER",
+        "score": "41",
+        "ibu_id": "BTGER20108200501"
+      },
+      {
+        "rank": "8",
+        "name": "VITTOZZI Lisa",
+        "nat": "ITA",
+        "score": "37",
+        "ibu_id": "BTITA20402199501"
+      },
+      {
+        "rank": "9",
+        "name": "VOBORNIKOVA Tereza",
+        "nat": "CZE",
+        "score": "34",
+        "ibu_id": "BTCZE23105200001"
+      },
+      {
+        "rank": "10",
+        "name": "CHARVATOVA Lucie",
+        "nat": "CZE",
+        "score": "31",
+        "ibu_id": "BTCZE20102199301"
+      },
+      {
+        "rank": "11",
+        "name": "JEANMONNOT Lou",
+        "nat": "FRA",
+        "score": "30",
+        "ibu_id": "BTFRA22810199801"
+      },
+      {
+        "rank": "12",
+        "name": "ARNEKLEIV Juni",
+        "nat": "NOR",
+        "score": "29",
+        "ibu_id": "BTNOR21702199901"
+      },
+      {
+        "rank": "13",
+        "name": "VOIGT Vanessa",
+        "nat": "GER",
+        "score": "28",
+        "ibu_id": "BTGER20710199701"
+      },
+      {
+        "rank": "14",
+        "name": "TANDREVOLD Ingrid Landmark",
+        "nat": "NOR",
+        "score": "27",
+        "ibu_id": "BTNOR22309199601"
+      },
+      {
+        "rank": "15",
+        "name": "ZUK Kamila",
+        "nat": "POL",
+        "score": "26",
+        "ibu_id": "BTPOL21811199701"
+      },
+      {
+        "rank": "16",
+        "name": "JAKIELA Joanna",
+        "nat": "POL",
+        "score": "25",
+        "ibu_id": "BTPOL20203199901"
+      },
+      {
+        "rank": "17",
+        "name": "HALVARSSON Ella",
+        "nat": "SWE",
+        "score": "24",
+        "ibu_id": "BTSWE22210199901"
+      },
+      {
+        "rank": "18",
+        "name": "HOJNISZ-STAREGA Monika",
+        "nat": "POL",
+        "score": "23",
+        "ibu_id": "BTPOL22708199101"
+      },
+      {
+        "rank": "19",
+        "name": "JUPPE Anna",
+        "nat": "AUT",
+        "score": "22",
+        "ibu_id": "BTAUT21409199901"
+      },
+      {
+        "rank": "20",
+        "name": "KIRKEEIDE Maren",
+        "nat": "NOR",
+        "score": "21",
+        "ibu_id": "BTNOR20103200301"
+      },
+      {
+        "rank": "21",
+        "name": "FICHTNER Marlene",
+        "nat": "GER",
+        "score": "20",
+        "ibu_id": "BTGER21603200301"
+      },
+      {
+        "rank": "22",
+        "name": "BASERGA Amy",
+        "nat": "SUI",
+        "score": "19",
+        "ibu_id": "BTSUI22909200001"
+      },
+      {
+        "rank": "23",
+        "name": "HEIJDENBERG Anna-Karin",
+        "nat": "SWE",
+        "score": "18",
+        "ibu_id": "BTSWE22207200001"
+      },
+      {
+        "rank": "24",
+        "name": "SKAR Siri",
+        "nat": "NOR",
+        "score": "17",
+        "ibu_id": "BTNOR22611200301"
+      },
+      {
+        "rank": "25",
+        "name": "MAGNUSSON Anna",
+        "nat": "SWE",
+        "score": "16",
+        "ibu_id": "BTSWE23103199501"
+      },
+      {
+        "rank": "26",
+        "name": "BENED Camille",
+        "nat": "FRA",
+        "score": "15",
+        "ibu_id": "BTFRA20609200001"
+      },
+      {
+        "rank": "27",
+        "name": "GASPARIN Aita",
+        "nat": "SUI",
+        "score": "14",
+        "ibu_id": "BTSUI20902199401"
+      },
+      {
+        "rank": "28",
+        "name": "ZDOUC Dunja",
+        "nat": "AUT",
+        "score": "13",
+        "ibu_id": "BTAUT20301199401"
+      },
+      {
+        "rank": "29",
+        "name": "MINKKINEN Suvi",
+        "nat": "FIN",
+        "score": "12",
+        "ibu_id": "BTFIN20812199401"
+      },
+      {
+        "rank": "30",
+        "name": "BOTET Paula",
+        "nat": "FRA",
+        "score": "11",
+        "ibu_id": "BTFRA21912200001"
+      },
+      {
+        "rank": "31",
+        "name": "HRISTOVA Lora",
+        "nat": "BUL",
+        "score": "10",
+        "ibu_id": "BTBUL22304200301"
+      },
+      {
+        "rank": "32",
+        "name": "SIDOROWICZ Natalia",
+        "nat": "POL",
+        "score": "9",
+        "ibu_id": "BTPOL20909199801"
+      },
+      {
+        "rank": "33",
+        "name": "NORDQVIST Johanna",
+        "nat": "SWE",
+        "score": "8",
+        "ibu_id": "BTSWE20109200001"
+      },
+      {
+        "rank": "34",
+        "name": "CARPELLA Fabiana",
+        "nat": "ITA",
+        "score": "7",
+        "ibu_id": "BTITA22803200401"
+      },
+      {
+        "rank": "35",
+        "name": "STEINER Tamara",
+        "nat": "AUT",
+        "score": "6",
+        "ibu_id": "BTAUT22505199701"
+      },
+      {
+        "rank": "36",
+        "name": "TODOROVA Milena",
+        "nat": "BUL",
+        "score": "5",
+        "ibu_id": "BTBUL21801199801"
+      },
+      {
+        "rank": "37",
+        "name": "WEIDEL Anna",
+        "nat": "GER",
+        "score": "4",
+        "ibu_id": "BTGER22505199601"
+      },
+      {
+        "rank": "38",
+        "name": "DE BESCHE Anne",
+        "nat": "DEN",
+        "score": "3",
+        "ibu_id": "BTNOR22705200001"
+      },
+      {
+        "rank": "39",
+        "name": "ANDEXER Anna",
+        "nat": "AUT",
+        "score": "2",
+        "ibu_id": "BTAUT22601200301"
+      },
+      {
+        "rank": "40",
+        "name": "MEIER Lea",
+        "nat": "SUI",
+        "score": "1",
+        "ibu_id": "BTSUI20203200101"
+      }
+    ]
   }
 }
